@@ -43,7 +43,7 @@ def augment_batch(batch, im_dir, res_imdir):
 def process_batches(batches, im_dir, res_imdir):
     all_new_rows = []
 
-    with ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor(max_workers=4) as executor:
         futures = [
             executor.submit(augment_batch, batch, im_dir, res_imdir)
             for idx, batch in enumerate(batches)
