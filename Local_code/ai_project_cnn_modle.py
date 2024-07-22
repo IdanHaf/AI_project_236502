@@ -12,7 +12,6 @@ import numpy as np
 # loading bar
 from tqdm import tqdm
 
-
 # Handle the dataset.
 class CustomImageDataset(Dataset):
     def __init__(self, csv_file, img_dir, transform=None):
