@@ -8,36 +8,7 @@ from PIL import Image
 import os
 import pandas as pd
 import numpy as np
-
-# loading bar
-from tqdm import tqdm
-
-# Handle the dataset.
-class CustomImageDataset(Dataset):
-    def __init__(self, csv_file, img_dir, transform=None):
-
-        self.img_labels = pd.read_csv(csv_file, header=None)
-        self.img_dir = img_dir
-        self.transform = transform
-
-    def __len__(self):
-        return len(self.img_labels)
-
-    def __getitem__(self, idx):
-        # Images are saved as: idx.png
-        img_name = str(idx) + ".png"
-        image_path = os.path.join(self.img_dir, img_name)
-        image = Image.open(image_path)
-
-        # Activate transform.
-        if self.transform:
-            image = self.transform(image)
-
-        # Data saves as: class_num.
-        class_num = self.img_labels.iloc[idx, 0]
-        img_label = torch.tensor(class_num, dtype=torch.long)
-
-        return image, img_label
+from Local_code.customDatasets.city_custom_dataset import CustomImageDataset
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -49,8 +20,8 @@ transform = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-daniel_dataset_path = '../../../Datasets/10K_Dataset'
-daniel_csv_file_path = '../../../Datasets/10K_Dataset/coords.csv'
+dataset_path = './Images'
+csv_file_path = './city_dataset_labels.csv'
 dataset = CustomImageDataset(csv_file_path, dataset_path, transform)
 
 batch_size = 64
@@ -76,14 +47,14 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size,
 # Using the ResNet-50 model
 model = torchvision.models.resnet50(weights=None)
 
-# Changing his last layer.
+# Changing the last layer.
 num_features = model.fc.in_features
-model.fc = nn.Linear(num_features, 72)
+model.fc = nn.Linear(num_features, 23)
 
 model = nn.DataParallel(model)
 
 # Loading the model.
-model_dict_path = '../modle_weights/resnet50module_australia.pth'
+model_dict_path = './resnet50module_city_dataset_cls.pth'
 model.load_state_dict(torch.load(model_dict_path))
 
 loss_func = nn.CrossEntropyLoss()
@@ -95,20 +66,20 @@ true_labels_list = []
 print("Calculate accuracy on test.")
 
 with torch.no_grad():
-    images, labels = next(iter(test_loader))
-    images = images.to(device)
-    labels = labels.to(device)
+    for images, labels in test_loader:
+        images = images.to(device)
+        labels = labels.to(device)
 
-    outputs = model(images)
+        outputs = model(images)
 
-    probabilities = nn.functional.softmax(outputs, dim=1)
-    _, predicted_labels = torch.max(probabilities, 1)
+        probabilities = nn.functional.softmax(outputs, dim=1)
+        _, predicted_labels = torch.max(probabilities, 1)
 
-    predicted_labels_list.extend(predicted_labels.cpu().numpy())
-    true_labels_list.extend(labels.cpu().numpy())
+        predicted_labels_list.extend(predicted_labels.cpu().numpy())
+        true_labels_list.extend(labels.cpu().numpy())
 
-    loss = loss_func(outputs, labels)
-    running_test_loss += loss.item()
+        loss = loss_func(outputs, labels)
+        running_test_loss += loss.item()
 
 test_loss = running_test_loss / len(test_loader)
 
