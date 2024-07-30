@@ -151,10 +151,7 @@ plt.legend()
 
 plt.tight_layout()
 
-# Save the plots to image files
 plt.savefig('training_validation_metrics.png')
-
-# Optionally, close the plot if running in a non-interactive environment
 plt.close()
 
 running_test_loss = 0.0
