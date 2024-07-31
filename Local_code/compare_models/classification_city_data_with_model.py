@@ -186,3 +186,5 @@ def train_with_model(model, model_name):
     print(f'Accuracy: {accuracy}.')
 
     print(true_labels_array)
+    torch.cuda.empty_cache()
+
