@@ -19,7 +19,7 @@ def train_with_model(model, model_name):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Gpu is available: " + str(torch.cuda.is_available()))
 
-    num_epochs = 30
+    num_epochs = 20
     batch_size = 64
     learning_rate = 0.05
 
