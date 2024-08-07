@@ -1,3 +1,4 @@
 
 /.idea
-/sign classifier/mtsd_v2_fully_annotated
+/sign classifier/dataset
+*.zip
