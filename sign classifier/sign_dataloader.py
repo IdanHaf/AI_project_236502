@@ -39,9 +39,9 @@ class SignImageDataset(Dataset):
 
         num_objs = len(image_data['objects'])
         # Init labels
-        labels = torch.ones((num_objs,), dtype=torch.int64)
-        areas = torch.ones((num_objs,), dtype=torch.int64)
-        iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
+        labels = torch.ones((num_objs,), dtype=torch.uint16)
+        areas = torch.ones((num_objs,), dtype=torch.uint32)
+        iscrowd = torch.zeros((num_objs,), dtype=torch.int8)
 
         bboxes = []
         # Finish preparing the data

@@ -25,5 +25,5 @@ for idx in tqdm(range(len(images))):
             if label not in label_res.keys():
                 label_res[label] = len(label_res.keys()) + 1
 
-with open("labels.txt", 'w') as f:
+with open("labels.json", 'w') as f:
     f.write(json.dumps(label_res))
