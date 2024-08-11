@@ -3,13 +3,15 @@ import json
 
 from tqdm import tqdm
 
-dir_name = "dataset\splits"
-dir_img = "dataset\\annotations"
+dir_name = os.path.join('dataset', "splits")
+dir_img = os.path.join('dataset', "annotations")
 res = ""
 label_res = {}
+images = [os.path.splitext(file)[0] for file in os.listdir("images")]
 
 for file_name in os.listdir(dir_img):
-    res = res + file_name + '\n'
+    if os.path.splitext(file_name)[0] in images:
+        res = res + file_name + '\n'
 
 with open("annotated_images.txt", 'w') as f:
     f.write(res)
