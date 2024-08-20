@@ -6,12 +6,14 @@ from torch.utils.data import random_split, DataLoader
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.transforms import v2 as T
 import torchvision.transforms as transforms
+from torchvision.ops import nms
 
 from acc_util import evaluate_bbox_accuracy
+from torchvision_references.engine import train_one_epoch, evaluate
 import sign_dataloader
 import json
 
-
+debug = True
 # inspired by https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
 
 def collate_fn(batch):
@@ -26,6 +28,7 @@ def collate_fn(batch):
     # `targets` is a list of dictionaries, each containing boxes and labels
     return images, targets
 
+
 def get_transform(train):
     transforms = []
     if train:
@@ -36,17 +39,60 @@ def get_transform(train):
 
 
 def validate(val_model, val_dataloader, device):
+    global debug
+
     val_model.eval()  # Set model to evaluation mode
     val_loss = 0
+    # Loss functions
+    box_loss_fn = nn.SmoothL1Loss()  # For bounding box regression
+    class_loss_fn = nn.CrossEntropyLoss()  # For classification
     with torch.no_grad():  # Disable gradient calculation
         for val_images, val_targets in val_dataloader:
             val_images = list(image.to(device) for image in val_images)
             val_targets = [{k: v.to(device) for k, v in t.items()} for t in val_targets]
-
             # Forward pass
-            val_loss_dict = val_model(val_images, val_targets)
-            val_losses = sum(loss for loss in val_loss_dict.values())
-            val_loss += val_losses.item()
+            detections = val_model(val_images)
+
+            for detection, target in zip(detections, val_targets):
+                pred_boxes = detection['boxes']
+                pred_scores = detection['scores']
+                keep_indices = nms(pred_boxes, pred_scores, 0.5)
+                pred_boxes = pred_boxes[keep_indices]
+
+                true_boxes = target['boxes']
+                true_labels = target['labels']
+                if debug:
+                    print(f'pred scores are{pred_scores}')
+                    print(f'true labels are{true_labels}')
+                    debug = False
+
+                # Handle size mismatches
+                k = true_boxes.shape[0]
+                pred_boxes = pred_boxes[:k]
+                if pred_boxes.shape[0] < true_boxes.shape[0]:
+                    # Padding with zeros
+                    padding = torch.zeros((true_boxes.shape[0] - pred_boxes.shape[0], 4), device=pred_boxes.device)
+                    pred_boxes = torch.cat([pred_boxes, padding], dim=0)
+
+                # Box Regression Loss
+                # To align with SmoothL1Loss, make sure pred_boxes and true_boxes have the same shape
+                if pred_boxes.shape[0] > 0 and true_boxes.shape[0] > 0:
+                    box_loss = box_loss_fn(pred_boxes, true_boxes)
+                else:
+                    box_loss = torch.tensor(0.0, device=device)
+
+                # Classification Loss
+                # # Convert predictions and targets to tensors
+                # if pred_scores.shape[0] > 0 and true_labels.shape[0] > 0:
+                #     print(f'true_labels shape {true_labels}')
+                #     print(f'pred_labels shape {pred_scores}')
+                #     class_loss = class_loss_fn(pred_scores, true_labels)
+                # else:
+                #     class_loss = torch.tensor(0.0, device=device)
+
+                # Sum losses
+                total_loss = box_loss
+                val_loss += total_loss.item()
 
     avg_val_loss = val_loss / len(val_dataloader)
     print(f"Validation Loss: {avg_val_loss}")
@@ -58,9 +104,9 @@ batch_size = 16
 learning_rate = 0.05
 
 transform = transforms.Compose([
-        transforms.Resize((800, 800)),
-        transforms.ToTensor(),
-    ])
+    transforms.Resize((800, 800)),
+    transforms.ToTensor(),
+])
 
 generator = torch.Generator()
 generator.manual_seed(387642706252)
@@ -91,7 +137,7 @@ train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, va
 
 # loader splits
 val_loader = DataLoader(val_dataset, batch_size=batch_size,
-                        shuffle=True, collate_fn=collate_fn)
+                        shuffle=False, collate_fn=collate_fn)
 train_loader = DataLoader(train_dataset, batch_size=batch_size,
                           shuffle=True, num_workers=2, pin_memory=True, collate_fn=collate_fn)
 test_loader = DataLoader(test_dataset, batch_size=batch_size,
@@ -99,7 +145,6 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size,
 
 # set to parallel and store the model
 model = model.to(device)
-
 
 params = [p for p in model.parameters() if p.requires_grad]
 optimizer = torch.optim.SGD(
@@ -119,32 +164,18 @@ lr_scheduler = torch.optim.lr_scheduler.StepLR(
 losses = {}
 # train the model
 for epoch in range(num_epochs):
+    print(f"Epoch {epoch + 1}/{num_epochs}")
+
     model.train()
-    for images, targets in train_loader:
-        images = list(image.to(device) for image in images)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-
-        # Forward pass
-        loss_dict = model(images, targets)
-        del images
-        del targets
-        torch.cuda.empty_cache()
-
-        # Compute total loss
-        losses = sum(loss for loss in loss_dict.values())
-
-        # Backward pass and optimization
-        optimizer.zero_grad()
-        losses.backward()
-        optimizer.step()
-
-    # Update the learning rate
+    train_one_epoch(model, optimizer, train_loader, device, epoch, print_freq=100)
+    # update the learning rate
     lr_scheduler.step()
 
     # validate
     avg_val_loss = validate(model, val_loader, device)
 
-    print(f"Epoch {epoch + 1}/{num_epochs}, Training Loss: {losses.item()}, Validation Loss: {avg_val_loss}")
+    torch.cuda.empty_cache()
+
 
 torch.save(model.state_dict(), "sign_detector.pth")
 
@@ -161,7 +192,6 @@ for images, targets in test_loader:
     # Forward pass
     predictions = model(images)
     del images
-    del targets
     for prediction in predictions:
         predicted_labels_list = []
         true_labels_list = []
@@ -186,6 +216,8 @@ for images, targets in test_loader:
         acc = evaluate_bbox_accuracy(predicted_labels_list, true_labels_list, predicted_bboxes, true_bboxes)
         label_acc.append(acc[0])
         bbox_acc.append(acc[1])
+    del targets
+    torch.cuda.empty_cache()
 
 label_acc = np.array(label_acc)
 bbox_acc = np.array(bbox_acc)
