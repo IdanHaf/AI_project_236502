@@ -8,89 +8,146 @@ from PIL import Image
 import os
 import pandas as pd
 import numpy as np
-from Local_code.customDatasets.city_custom_dataset import CustomImageDataset
+from customDatasets.test_custom_dataset import CustomImageDataset
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print("Gpu is available: " + str(torch.cuda.is_available()))
+#   TODO:: This needed to be added to the test file.
+def add_predicted_labels_to_csv(predicted_labels, true_labels, lat_array, lng_array):
+    test_data = {
+        'predicted_labels': predicted_labels,
+        'true_labels': true_labels,
+        'lat': lat_array,
+        'lng': lng_array
+    }
+    df = pd.DataFrame(test_data)
 
-transform = transforms.Compose([
-    transforms.Resize((256, 256)),
-    transforms.ToTensor(),
-    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-])
+    output_file_path = './model_predictions.csv'
+    df.to_csv(output_file_path, index=False)
+    print("file saved")
 
-dataset_path = './Images'
-csv_file_path = './city_dataset_labels.csv'
-dataset = CustomImageDataset(csv_file_path, dataset_path, transform)
 
-batch_size = 64
+def create_centers_array():
+    df = pd.read_csv('big_dataset_labeled.csv')
 
-train_size = int(0.6 * len(dataset))
-val_size = int(0.2 * len(dataset))
-test_size = len(dataset) - train_size - val_size
+    result_array = [None] * 120
+    labels_visited = np.zeros(120)
+    num_of_labels_visited = 0
 
-# Creating a seed.
-generator = torch.Generator()
-generator.manual_seed(387642706252)
+    for _, row in df.iterrows():
+        lat, lng = row['cluster_center']
+        label = row['cluster_label']
 
-# Splitting the data.
-train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size], generator = generator  )
+        if labels_visited[label] == 0:
+            result_array[label] = [lat, lng]
+            labels_visited[label] += 1
+            num_of_labels_visited += 1
 
-train_loader = DataLoader(train_dataset, batch_size=batch_size,
-                                           shuffle=True, num_workers=2, pin_memory=True)
-val_loader = DataLoader(val_dataset, batch_size=batch_size,
-                                           shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=batch_size,
-                                           shuffle=False)
+        if num_of_labels_visited == 120:
+            break
 
-# Using the ResNet-50 model
-model = torchvision.models.resnet50(weights=None)
+    return result_array
 
-# Changing the last layer.
-num_features = model.fc.in_features
-model.fc = nn.Linear(num_features, 23)
 
-model = nn.DataParallel(model)
+if __name__ == "__main__":
+    print("start testing:")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Gpu is available: " + str(torch.cuda.is_available()))
 
-# Loading the model.
-model_dict_path = './resnet50module_city_dataset_cls.pth'
-model.load_state_dict(torch.load(model_dict_path))
+    batch_size = 64
 
-loss_func = nn.CrossEntropyLoss()
+    transform = transforms.Compose([
+        transforms.Resize((256, 256)),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
 
-running_test_loss = 0.0
-predicted_labels_list = []
-true_labels_list = []
+    city_dataset_path = './Images'
+    city_csv_file_path = './city_images_dataset.csv'
+    big_dataset_path = './results'
+    big_csv_file_path = './big_dataset_labeled.csv'
+    dataset = CustomImageDataset(city_csv_file_path, city_dataset_path, big_csv_file_path, big_dataset_path,
+                                 transform)  # Idan Dataset loading
 
-print("Calculate accuracy on test.")
+    print(f"Number of samples in the dataset: {len(dataset)}")
 
-with torch.no_grad():
-    for images, labels in test_loader:
-        images = images.to(device)
-        labels = labels.to(device)
+    train_size = int(0.6 * len(dataset))
+    val_size = int(0.2 * len(dataset))
+    test_size = len(dataset) - train_size - val_size
 
-        outputs = model(images)
+    # Creating a seed.
+    generator = torch.Generator()
+    generator.manual_seed(387642706252)
 
-        probabilities = nn.functional.softmax(outputs, dim=1)
-        _, predicted_labels = torch.max(probabilities, 1)
+    # Splitting the data.
+    train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size], generator=generator)
 
-        predicted_labels_list.extend(predicted_labels.cpu().numpy())
-        true_labels_list.extend(labels.cpu().numpy())
+    train_loader = DataLoader(train_dataset, batch_size=batch_size,
+                              shuffle=True, num_workers=2, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size,
+                            shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size,
+                             shuffle=False)
 
-        loss = loss_func(outputs, labels)
-        running_test_loss += loss.item()
+    # Using the ResNet-50 model
+    model = torchvision.models.resnet50(weights=None)
 
-test_loss = running_test_loss / len(test_loader)
+    # Changing the last layer.
+    num_classes = 120
+    num_features = model.fc.in_features
+    model.fc = nn.Linear(num_features, num_classes)
 
-predicted_labels_array = np.array(predicted_labels_list)
-true_labels_array = np.array(true_labels_list)
+    model = nn.DataParallel(model)
 
-accuracy = np.mean(predicted_labels_array == true_labels_array)
+    # Loading the model.
+    model_dict_path = './classification_best_lr0.03_batch64.pth'
+    model.load_state_dict(torch.load(model_dict_path))
 
-print(predicted_labels_array)
+    loss_func = nn.CrossEntropyLoss()
 
-print(f'Finished test, Loss: {test_loss:.4f}')
-print(f'Accuracy: {accuracy}.')
+    running_test_loss = 0.0
+    predicted_labels_list = []
+    true_labels_list = []
+    lat_list = []
+    lng_list = []
+    expected_values = []
 
-print(true_labels_array)
+    just_to_know = 1
+
+    print("Calculating accuracy on test.")
+
+    with torch.no_grad():
+        for images, labels, lat, lng in test_loader:
+            images = images.to(device)
+            labels = labels.to(device)
+
+            outputs = model(images)
+
+            probabilities = nn.functional.softmax(outputs, dim=1)
+            _, predicted_labels = torch.max(probabilities, 1)
+
+            predicted_labels_list.extend(predicted_labels.cpu().numpy())
+            true_labels_list.extend(labels.cpu().numpy())
+            lat_list.extend(lat)
+            lng_list.extend(lng)
+
+            # TODO:: remove.
+            if just_to_know == 1:
+                print(f"true_labels_list: {true_labels_list}, predicted_labels_list: {predicted_labels_list}")
+                just_to_know = 0
+
+            loss = loss_func(outputs, labels)
+            running_test_loss += loss.item()
+
+    test_loss = running_test_loss / len(test_loader)
+
+    predicted_labels_array = np.array(predicted_labels_list)
+    true_labels_array = np.array(true_labels_list)
+    lat_array = np.array(lat_list)
+    lng_array = np.array(lng_list)
+
+    accuracy = np.mean(predicted_labels_array == true_labels_array)
+
+    add_predicted_labels_to_csv(predicted_labels_array, true_labels_array, lat_array, lng_array)
+
+    print(f'Finished test, Loss: {test_loss:.4f}')
+    print(f'Accuracy: {accuracy}.')

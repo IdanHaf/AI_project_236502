@@ -78,10 +78,11 @@ def add_cluster_column(file_name, num_clusters):
     cluster_centers = kmeans.cluster_centers_
 
     df['cluster_label'] = cluster_labels
+    df['cluster_center'] = df['cluster_label'].apply(lambda label: cluster_centers[label])
 
-    output_file_path = './images_dataset_with_clusters.csv'
-    df.to_csv(output_file_path, index=False)
-    print("file saved")
+    # output_file_path = './images_dataset_with_clusters.csv'
+    # df.to_csv(output_file_path, index=False)
+    # print("file saved")
 
     # Count number of samples in each cluster
     cls_hist = np.bincount(cluster_labels, minlength=num_clusters)
@@ -127,23 +128,26 @@ def add_cluster_column(file_name, num_clusters):
 
     plt.close()
 
+    return df
 
-def add_cluster_data_to_cities(images_dataset_with_clusters, city_csv):
-    df1 = pd.read_csv(images_dataset_with_clusters, dtype={'id': str})
+
+def add_cluster_data_to_cities(df_with_clusters, city_csv):
+    df1 = df_with_clusters
 
     # file with id, lat, and lng columns
     df2 = pd.read_csv(city_csv, dtype={'place_id': str})
 
     df1_renamed = df1.rename(columns={'id': 'place_id', 'lng': 'lon'})
-    merged_df = pd.merge(df2, df1_renamed[['place_id', 'lat', 'lon', 'cluster_label']], on=['place_id', 'lat', 'lon'],
+    merged_df = pd.merge(df2, df1_renamed[['place_id', 'lat', 'lon', 'cluster_label', 'cluster_center']],
+                         on=['place_id', 'lat', 'lon'],
                          how='left')
 
     output_file_path = './city_images_dataset.csv'
     merged_df.to_csv(output_file_path, index=False)
 
 
-def remove_city_data(csv_file):
-    df = pd.read_csv(csv_file, dtype={'id': str})
+def remove_city_data(df_with_clusters):
+    df = df_with_clusters
 
     filtered_df = df.iloc[:747932]
 
@@ -151,6 +155,22 @@ def remove_city_data(csv_file):
     filtered_df.to_csv(output_file_path, index=False)
 
 
+# Switch cluster column for future training.
+def drop_cluster_col(csv_file):
+    df = pd.read_csv(csv_file, dtype={'id': str})
+    df = df.drop(columns=['cluster_label'])
+
+    output_file_path = './combined_city_and_big_dataset.csv'
+    df.to_csv(output_file_path, index=False)
+
+
+def preprocess_datasets(combined_dataset_file_path, cities_dataset_file_path):
+    df_clustered = add_cluster_column(combined_dataset_file_path, 120)
+    add_cluster_data_to_cities(df_clustered, cities_dataset_file_path)
+    remove_city_data(df_clustered)
+
+
 if __name__ == "__main__":
-    remove_city_data("./images_dataset_with_clusters.csv")
+    preprocess_datasets("./combined_city_and_big_dataset.csv",
+                        "./city_drop_cluster_dataset.csv")
 
