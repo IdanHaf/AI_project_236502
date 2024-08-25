@@ -54,18 +54,17 @@ class SignImageDataset(Dataset):
             labels[idx] = self.labels[obj['label']]
             bbox = obj['bbox']
 
-            xmin = int(bbox["xmin"])
-            ymin = int(bbox["ymin"])
-            xmax = int(bbox["xmax"])
-            ymax = int(bbox["ymax"])
-            xmin = min(xmin, xmax)
-            ymin = min(ymin, ymax)
-            xmax = max(int(bbox["xmin"]), xmax)
-            ymax = max(int(bbox["ymin"]), ymax)
+            xmin = bbox['xmin']
+            ymin = bbox['ymin']
+            xmax = bbox['xmax']
+            ymax = bbox['ymax']
+            xmin *= width_ratio
+            xmax *= width_ratio
+            ymin *= height_ratio
+            ymax *= height_ratio
 
             areas[idx] = (xmax - xmin) * (ymax - ymin)
-            bboxes[idx] = torch.tensor(
-                [width_ratio * xmin, height_ratio * ymin, width_ratio * xmax, height_ratio * ymax], dtype=torch.float64)
+            bboxes[idx] = torch.tensor([xmin, ymin, xmax, ymax], dtype=torch.float64)
 
         bboxes = BoundingBoxes(bboxes, format='XYXY', canvas_size=image.shape)
 

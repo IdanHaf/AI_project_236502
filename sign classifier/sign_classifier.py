@@ -14,6 +14,8 @@ import sign_dataloader
 import json
 
 debug = True
+
+
 # inspired by https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
 
 def collate_fn(batch):
@@ -176,51 +178,4 @@ for epoch in range(num_epochs):
 
     torch.cuda.empty_cache()
 
-
 torch.save(model.state_dict(), "sign_detector.pth")
-
-# test
-model.eval()
-
-print("Calculate accuracy on test.")
-label_acc = []
-bbox_acc = []
-for images, targets in test_loader:
-    images = list(image.to(device) for image in images)
-    targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-
-    # Forward pass
-    predictions = model(images)
-    del images
-    for prediction in predictions:
-        predicted_labels_list = []
-        true_labels_list = []
-
-        predicted_bboxes = []
-        true_bboxes = []
-
-        predicted_boxes = prediction['boxes'].cpu().numpy()
-        predicted_labels = prediction['labels'].cpu().numpy()
-        predicted_scores = prediction['scores'].cpu().numpy()
-
-        score_threshold = 0.5
-        filtered_boxes = predicted_boxes[predicted_scores > score_threshold]
-        filtered_labels = predicted_labels[predicted_scores > score_threshold]
-        filtered_scores = predicted_scores[predicted_scores > score_threshold]
-
-        predicted_labels_list.extend(filtered_labels)
-        true_labels_list.extend(targets['labels'])
-
-        predicted_bboxes.extend(filtered_boxes)
-        true_bboxes.extend(targets['boxes'])
-        acc = evaluate_bbox_accuracy(predicted_labels_list, true_labels_list, predicted_bboxes, true_bboxes)
-        label_acc.append(acc[0])
-        bbox_acc.append(acc[1])
-    del targets
-    torch.cuda.empty_cache()
-
-label_acc = np.array(label_acc)
-bbox_acc = np.array(bbox_acc)
-print(f'The label accuracy {np.mean(label_acc)}, The bbox fitting accuracy {np.mean(bbox_acc)}')
-# find a way to define accuracy
-torch.cuda.empty_cache()
