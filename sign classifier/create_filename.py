@@ -14,10 +14,9 @@ for file_name in os.listdir(dir_img):
         image_data = json.load(f)
         is_pano = image_data['ispano']
 
-        if os.path.splitext(file_name)[0] in images and (is_pano == False):
+        if os.path.splitext(file_name)[0] in images and (not is_pano):
             res = res + file_name + '\n'
-        else:
-            print(image_data)
+
 
 with open("annotated_images.txt", 'w') as f:
     f.write(res)
