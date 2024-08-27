@@ -103,7 +103,7 @@ def validate(val_model, val_dataloader, device):
 
 num_epochs = 30
 batch_size = 16
-learning_rate = 0.05
+learning_rate = 0.001
 
 transform = transforms.Compose([
     transforms.Resize((800, 800)),
