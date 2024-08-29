@@ -8,12 +8,7 @@ from torchvision.transforms import v2 as T
 import torchvision.transforms as transforms
 from torchvision.ops import nms
 
-from acc_util import evaluate_bbox_accuracy
-from torchvision_references.engine import train_one_epoch, evaluate
 import sign_dataloader
-import json
-
-debug = True
 
 
 # inspired by https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
@@ -83,16 +78,6 @@ def validate(val_model, val_dataloader, device):
                 else:
                     box_loss = torch.tensor(0.0, device=device)
 
-                # Classification Loss
-                # # Convert predictions and targets to tensors
-                # if pred_scores.shape[0] > 0 and true_labels.shape[0] > 0:
-                #     print(f'true_labels shape {true_labels}')
-                #     print(f'pred_labels shape {pred_scores}')
-                #     class_loss = class_loss_fn(pred_scores, true_labels)
-                # else:
-                #     class_loss = torch.tensor(0.0, device=device)
-
-                # Sum losses
                 total_loss = box_loss
                 val_loss += total_loss.item()
 
@@ -101,9 +86,9 @@ def validate(val_model, val_dataloader, device):
     return avg_val_loss
 
 
-num_epochs = 30
-batch_size = 16
-learning_rate = 0.001
+num_epochs = 15
+batch_size = 4
+learning_rate = 0.005
 
 transform = transforms.Compose([
     transforms.Resize((800, 800)),
@@ -117,12 +102,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Gpu is available: " + str(torch.cuda.is_available()))
 
 # load a model pre-trained on COCO
-model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn(weights="DEFAULT")
+model = torchvision.models.detection.fasterrcnn_resnet50_fpn_v2(pretrained=True)
 
-num_classes = 1
-with open('labels.json', 'r') as f:
-    labels = json.load(f)
-    num_classes += len(labels.keys())
+num_classes = 2
 
 in_features = model.roi_heads.box_predictor.cls_score.in_features
 model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
@@ -156,23 +138,28 @@ optimizer = torch.optim.SGD(
     weight_decay=0.0005
 )
 
-# and a learning rate scheduler
-lr_scheduler = torch.optim.lr_scheduler.StepLR(
-    optimizer,
-    step_size=3,
-    gamma=0.1
-)
-
-losses = {}
 # train the model
 for epoch in range(num_epochs):
     print(f"Epoch {epoch + 1}/{num_epochs}")
+    model.train(True)
+    epoch_loss = 0
+    for data in train_loader:
+        imgs = []
+        targets = []
+        for d, t in zip(data[0], data[1]):
+            # move data to device
+            imgs.append(d.to(device))
+            target = {'boxes': t['boxes'].to(device), 'labels': t['labels'].to(device)}
+            targets.append(target)
 
-    model.train()
-    train_one_epoch(model, optimizer, train_loader, device, epoch, print_freq=100)
-    # update the learning rate
-    lr_scheduler.step()
-
+        loss_dict = model(imgs, targets)
+        loss = sum(l for l in loss_dict.values())
+        epoch_loss += loss.cpu().detach().numpy()
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+    print(epoch_loss / len(train_loader))
     # validate
     avg_val_loss = validate(model, val_loader, device)
 

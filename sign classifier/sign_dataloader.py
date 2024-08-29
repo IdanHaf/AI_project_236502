@@ -36,22 +36,21 @@ class SignImageDataset(Dataset):
         image = Image.open(img_path)
 
         width_ratio = height_ratio = 1
+
         # Activate transform.
         if self.transform:
             image = self.transform(image)
-            width_ratio = image.shape[0] / image_data['width']
+            width_ratio = image.shape[2] / image_data['width']
             height_ratio = image.shape[1] / image_data['height']
 
         num_objs = len(image_data['objects'])
         # Init labels
         labels = torch.ones((num_objs,), dtype=torch.int64)
         areas = torch.ones((num_objs,), dtype=torch.float64)
-        iscrowd = torch.zeros((num_objs,), dtype=torch.int8)
 
         bboxes = torch.zeros((num_objs, 4), dtype=torch.float64)
         # Finish preparing the data
         for idx, obj in enumerate(image_data['objects']):
-            labels[idx] = self.labels[obj['label']]
             bbox = obj['bbox']
 
             xmin = bbox['xmin']
@@ -66,12 +65,11 @@ class SignImageDataset(Dataset):
             areas[idx] = (xmax - xmin) * (ymax - ymin)
             bboxes[idx] = torch.tensor([xmin, ymin, xmax, ymax], dtype=torch.float64)
 
-        bboxes = BoundingBoxes(bboxes, format='XYXY', canvas_size=image.shape)
-
         if num_objs == 0:
+            labels = torch.empty((0,), dtype=torch.int64)
             bboxes = torch.empty((0, 4), dtype=torch.float32)
 
-        target = {"boxes": bboxes, "labels": labels, "image_id": torch.tensor(idx), "area": areas, "iscrowd": iscrowd}
+        target = {"boxes": bboxes, "labels": labels}
 
         json_file.close()
 
