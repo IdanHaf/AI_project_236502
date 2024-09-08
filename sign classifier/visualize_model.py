@@ -44,16 +44,16 @@ model.eval()
 with torch.no_grad():  # No need to calculate gradients for inference
     predictions = model(images)
 
+
+sign_dictionary = {}
 for i in range(len(images)):
     image = transforms.ToPILImage()(images[i])
     draw = ImageDraw.Draw(image)
-
+    signs = []
     # Draw rectangles and scores
     pred = predictions[i]
     boxes = pred['boxes'].tolist()
     scores = pred['scores'].tolist()
-
-    print(boxes)
 
     rects = Image.new('RGBA', image.size)
     rects_draw = ImageDraw.Draw(rects)
@@ -61,7 +61,7 @@ for i in range(len(images)):
     for box, score in zip(boxes, scores):
         if score < 0.5:
             continue
-        print(box)
+
         width_ratio = 1
         height_ratio = 1
         x1, y1, x2, y2 = box # Convert coordinates to integers
@@ -71,9 +71,15 @@ for i in range(len(images)):
         x2 *= width_ratio
         y1 *= height_ratio
         y2 *= height_ratio
+
+        sign_image = images[i][:, int(y1):int(y2), int(x1): int(x2)]
+        signs.append(sign_image.clone())
+
         rects_draw.rectangle((x1 + 1, y1 + 1, x2 - 1, y2 - 1))
-        print(f'x1 {x1} y1 {y1} x2 {x2} y2 {y2}')
 
         draw.line(((x1, y1), (x2, y1), (x2, y2), (x1, y2), (x1, y1)), fill='green', width=1)
         draw.text((x1, y1), f"{score:.2f}", fill="red")
+    sign_dictionary[i] = signs
     image.show()
+print(sign_dictionary)
+torch.save(sign_dictionary, 'sign_dictionary.pth')

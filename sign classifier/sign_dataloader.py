@@ -51,6 +51,7 @@ class SignImageDataset(Dataset):
         bboxes = torch.zeros((num_objs, 4), dtype=torch.float64)
         # Finish preparing the data
         for idx, obj in enumerate(image_data['objects']):
+            labels[idx] = self.labels[obj['label']]
             bbox = obj['bbox']
 
             xmin = bbox['xmin']

@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import torch
 import torchvision
@@ -7,6 +9,7 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.transforms import v2 as T
 import torchvision.transforms as transforms
 from torchvision.ops import nms
+import acc_util
 
 import sign_dataloader
 
@@ -36,10 +39,10 @@ def get_transform(train):
 
 
 def validate(val_model, val_dataloader, device):
-    global debug
 
     val_model.eval()  # Set model to evaluation mode
     val_loss = 0
+    classification_loss = 0
     # Loss functions
     box_loss_fn = nn.SmoothL1Loss()  # For bounding box regression
     class_loss_fn = nn.CrossEntropyLoss()  # For classification
@@ -53,15 +56,14 @@ def validate(val_model, val_dataloader, device):
             for detection, target in zip(detections, val_targets):
                 pred_boxes = detection['boxes']
                 pred_scores = detection['scores']
+                pred_labels = detection['labels']
                 keep_indices = nms(pred_boxes, pred_scores, 0.5)
                 pred_boxes = pred_boxes[keep_indices]
+                pred_labels = pred_labels[keep_indices]
 
                 true_boxes = target['boxes']
                 true_labels = target['labels']
-                if debug:
-                    print(f'pred scores are{pred_scores}')
-                    print(f'true labels are{true_labels}')
-                    debug = False
+
 
                 # Handle size mismatches
                 k = true_boxes.shape[0]
@@ -80,9 +82,12 @@ def validate(val_model, val_dataloader, device):
 
                 total_loss = box_loss
                 val_loss += total_loss.item()
+                classification_loss += acc_util.compute_classification_accuracy(pred_boxes, pred_labels, true_boxes, true_labels)
 
     avg_val_loss = val_loss / len(val_dataloader)
+    avg_classification_loss = classification_loss / len(val_dataloader)
     print(f"Validation Loss: {avg_val_loss}")
+    print(f"Classification Loss: {avg_classification_loss}")
     return avg_val_loss
 
 
@@ -104,7 +109,10 @@ print("Gpu is available: " + str(torch.cuda.is_available()))
 # load a model pre-trained on COCO
 model = torchvision.models.detection.fasterrcnn_resnet50_fpn_v2(pretrained=True)
 
-num_classes = 2
+num_classes = 1
+with open('labels.json', 'r') as f:
+    labels = json.load(f)
+    num_classes += len(labels.keys())
 
 in_features = model.roi_heads.box_predictor.cls_score.in_features
 model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
@@ -158,11 +166,11 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        
+
     print(epoch_loss / len(train_loader))
     # validate
     avg_val_loss = validate(model, val_loader, device)
 
     torch.cuda.empty_cache()
 
-torch.save(model.state_dict(), "sign_detector.pth")
+torch.save(model.state_dict(), "Detector/sign_detector_full_labels.pth")
