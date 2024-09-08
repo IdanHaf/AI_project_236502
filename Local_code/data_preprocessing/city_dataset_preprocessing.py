@@ -3,6 +3,11 @@ import numpy as np
 import sklearn.cluster as cluster
 import os
 
+"""
+    parm - dir with csv for each city.
+    return - csv file with removed duplicates, cluster label, and all the cities information combined.
+"""
+
 
 def combine_data(csv_dir_path):
     csv_city_files = os.listdir(csv_dir_path)
@@ -24,30 +29,34 @@ def combine_data(csv_dir_path):
 
     combined_df = combined_df.sample(frac=1).reset_index(drop=True)
 
-    #   Add classes column.
-    coordinates_df = combined_df[['lat', 'lon']]
-
-    kmeans = cluster.KMeans(n_clusters=23, init="k-means++", n_init=10)
-    kmeans = kmeans.fit(coordinates_df)
-
-    # Get cluster labels and cluster centers.
-    cluster_labels = kmeans.labels_
-    cluster_centers = kmeans.cluster_centers_
-
-    combined_df['cluster_label'] = cluster_labels
-
-    # Count number of samples at each class.
-    cls_hist = np.zeros(len(cluster_centers))
-
-    for i in range(len(cluster_labels)):
-        cls_hist[cluster_labels[i]] += 1
-
-    print(cls_hist)
-
+    # Add classes column.
+    # coordinates_df = combined_df[['lat', 'lon']]
+    #
+    # kmeans = cluster.KMeans(n_clusters=23, init="k-means++", n_init=10)
+    # kmeans = kmeans.fit(coordinates_df)
+    #
+    # cluster_labels = kmeans.labels_
+    # cluster_centers = kmeans.cluster_centers_
+    #
+    # combined_df['cluster_label'] = cluster_labels
+    #
+    # # Count number of samples at each class.
+    # cls_hist = np.zeros(len(cluster_centers))
+    #
+    # for i in range(len(cluster_labels)):
+    #     cls_hist[cluster_labels[i]] += 1
+    #
+    # print(cls_hist)
+    #
     print(f"combined_df length: {len(combined_df)}")
     output_file_path = './city_dataset_labels.csv'
     combined_df.to_csv(output_file_path, index=False)
     print("combined file saved")
+
+
+"""
+    Prints - city: number of different images from that city.
+"""
 
 
 def samples_from_cities(csv_path):
@@ -64,4 +73,3 @@ def samples_from_cities(csv_path):
 if __name__ == "__main__":
     combine_data('./Dataframes')
     samples_from_cities('./city_dataset_labels.csv')
-
