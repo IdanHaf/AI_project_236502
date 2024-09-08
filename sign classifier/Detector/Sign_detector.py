@@ -27,7 +27,7 @@ class SignDetector:
     def export_sign(self, dataloader):
         sign_dictionary = {}
         i = 0
-        for images, targets in dataloader:
+        for images, _ in dataloader:
             predictions = self.detect(images)
 
             for idx in range(len(images)):
