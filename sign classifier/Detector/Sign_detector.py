@@ -26,8 +26,7 @@ class SignDetector:
 
     def export_sign(self, dataloader):
         sign_dictionary = {}
-        i = 0
-        for images, _ in dataloader:
+        for images, t, image_id in dataloader:
             predictions = self.detect(images)
 
             for idx in range(len(images)):
@@ -45,11 +44,8 @@ class SignDetector:
                     x1, x2 = min(x1, x2), max(x1, x2)
                     y1, y2 = min(y1, y2), max(y1, y2)
 
-                    sign_image = images[i][:, int(y1):int(y2), int(x1): int(x2)]
+                    sign_image = images[idx][:, int(y1):int(y2), int(x1): int(x2)]
                     signs.append(sign_image.clone())
-                sign_dictionary[i + idx] = signs
-
-            i += len(images)
+                sign_dictionary[image_id] = signs
 
         torch.save(sign_dictionary, 'sign_dictionary.pth')
-
