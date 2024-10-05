@@ -38,7 +38,7 @@ def plot_loss_and_accuracy(train_losses, val_losses, val_accuracies, lr, batch_s
 
     plt.tight_layout()
 
-    plt.savefig(f"training_{lr}_{batch_size}_validation_metrics.png")
+    plt.savefig(f"training_{lr}_validation_metrics.png")
 
     plt.close()
 
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     all_models_val_accuracy = []
 
     batch_sizes = [64]
-    learning_rates = [0.0005, 0.0001, 0.00001]
+    learning_rates = [0.0005, 0.001, 0.00001]
 
     # Hyperparameter tuning (grid-search).
     for batch_size in batch_sizes:
@@ -119,21 +119,26 @@ if __name__ == "__main__":
 
             # Using the pre-trained ResNet-50 model
             model = torchvision.models.resnet50(weights='IMAGENET1K_V1')
+
+            # Freezing model layers.
+            for param in model.parameters():
+                param.requires_grad = False
+
             num_features = model.fc.in_features
             model.fc = nn.Linear(num_features, 120)
 
             model = nn.DataParallel(model)
             model = model.to(device)
 
-            # TODO:: add scheduler.
             loss_func = nn.CrossEntropyLoss()
-            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+            # Only last layers params.
+            optimizer = optim.Adam(model.module.fc.parameters(), lr=learning_rate)
 
             train_losses = []
             val_losses = []
             val_accuracies = []
 
-            patience = 4
+            patience = 6
             best_epoch = 0
             best_val_loss = float('inf')
             best_model_weights = None
@@ -200,13 +205,13 @@ if __name__ == "__main__":
                     best_val_loss = avg_val_loss
                     best_model_weights = copy.deepcopy(model.state_dict())
                     best_epoch = epoch + 1
-                    patience = 4
+                    patience = 6
                 else:
                     patience -= 1
                     if patience == 0:
                         break
 
-            torch.save(best_model_weights, f"classification_best_lr{learning_rate}_batch{batch_size}.pth")
+            torch.save(best_model_weights, f"finetune_best_lr{learning_rate}.pth")
             print(f"Module saved, best epoch: {best_epoch}")
 
             model.eval()
