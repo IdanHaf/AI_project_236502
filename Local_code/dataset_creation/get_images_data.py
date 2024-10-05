@@ -2,6 +2,7 @@ import json
 import mapillary.interface as mly
 import os
 
+# TODO:: add token.
 MLY_ACCESS_TOKEN = ''
 print(mly.set_access_token(MLY_ACCESS_TOKEN))
 
@@ -16,7 +17,7 @@ if __name__ == "__main__":
 
     labels = []
 
-    visited_labels = [14, 56, 43, 13, 2, 77, 59, 76, 109, 72, 41, 85, 54, 71, 78, 45, 84]
+    visited_labels = [14, 56, 43, 13, 2, 77, 59, 76, 109, 72, 41, 85, 54, 71, 78, 45, 84, 9]
 
     outdir = './dataset_image_json'
     os.makedirs(outdir, exist_ok=True)
@@ -39,7 +40,7 @@ if __name__ == "__main__":
 
         data = data.to_dict()
         rad = 150
-        while len(data['features']) < 500 and rad < 1000:
+        while len(data['features']) < 500 and rad < 3000:
             print(f"increasing radius for {lat}, {lng} to {rad}")
             data = mly.get_image_close_to(lat, lng, radius=rad).to_dict()
             rad += 100

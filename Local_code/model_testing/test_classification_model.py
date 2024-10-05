@@ -215,6 +215,18 @@ if __name__ == "__main__":
     # plot_label_histogram(test_loader, 'Test dataset label distribution')
 
     model_dict_path = './classification_best_lr0.0005_batch64.pth'
-    model_tester = TestModels(batch_size, transform, model_dict_path)
 
+    model = torchvision.models.resnet50(weights=None)
+
+    # Changing the last layer.
+    num_classes = 120
+    num_features = model.fc.in_features
+    model.fc = nn.Linear(num_features, num_classes)
+
+    model = nn.DataParallel(model)
+
+    # Loading the model.
+    model.load_state_dict(torch.load(model_dict_path))
+
+    model_tester = TestModels(batch_size, transform, model)
     model_tester.test_model(test_loader, device, add_predicted_labels_to_csv)

@@ -7,6 +7,7 @@ import os
 # To get one, visit https://www.mapillary.com/dashboard/developer, go to 'developers',
 # Then 'register application', register a new application (read access atleast),
 # then copy & paste the 'Client Token' here
+# TODO:: add token.
 MLY_ACCESS_TOKEN = ''
 print(mly.set_access_token(MLY_ACCESS_TOKEN))
 
@@ -68,7 +69,7 @@ def extract_images(features, output_dir):
 
 if __name__ == "__main__":
 
-    labels = [59, 76, 109, 72, 41, 85, 54, 71, 78, 45, 84, 51, 3]
+    labels = [9]
 
     for idx, label in enumerate(labels):
         json_file_path = os.path.join('./dataset_image_json', f'{label}.json')

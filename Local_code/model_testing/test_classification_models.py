@@ -13,24 +13,13 @@ import numpy as np
 from customDatasets.test_custom_dataset import CustomImageDataset
 
 
-class TestModels(nn.Module):
+class TestModels:
 
-    def __init__(self, batch_size, transform, model_path):
+    def __init__(self, batch_size, transform, model):
         self.batch_size = batch_size
         self.transform = transform
 
-        self.model = torchvision.models.resnet50(weights=None)
-
-        # Changing the last layer.
-        num_classes = 120
-        num_features = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_features, num_classes)
-
-        self.model = nn.DataParallel(self.model)
-
-        # Loading the model.
-        model_dict_path = model_path
-        self.model.load_state_dict(torch.load(model_dict_path))
+        self.model = model
 
         self.loss_func = nn.CrossEntropyLoss()
 
