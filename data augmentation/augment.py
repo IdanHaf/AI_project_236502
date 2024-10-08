@@ -6,13 +6,13 @@ from convert_panorama import panorama_to_plane
 import os
 from concurrent.futures import ProcessPoolExecutor
 
-angles = [0, 180, 240, 300, 340]
+angles = [0, 180, 240, 300]
 images_data = pd.read_csv('images.csv')
 indices = math.ceil(len(images_data) / 1024)
 chunks = np.array_split(images_data, indices)
 current_dir = os.getcwd()
 images_dir = os.path.join(current_dir, 'images')
-res_dir = os.path.join(current_dir, 'results')
+res_dir = os.path.join(current_dir, 'big_dataset')
 data = pd.DataFrame(columns=images_data.columns)
 
 

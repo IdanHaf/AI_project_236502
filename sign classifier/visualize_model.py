@@ -43,7 +43,7 @@ model.eval()
 
 with torch.no_grad():  # No need to calculate gradients for inference
     predictions = model(images)
-
+print(predictions)
 
 sign_dictionary = {}
 for i in range(len(images)):

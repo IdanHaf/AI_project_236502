@@ -18,13 +18,12 @@ class SignDetector:
 
     def detect(self, images):
         self.model.eval()
-        if self.transform is not None:
-            images = self.transform(images)
+
         with torch.no_grad():  # No need to calculate gradients for inference
             predictions = self.model(images)
         return predictions
 
-    def export_sign(self, dataloader):
+    def export_sign(self, dataloader, res_file):
         sign_dictionary = {}
         for images, t, image_id in dataloader:
             predictions = self.detect(images)
@@ -35,6 +34,7 @@ class SignDetector:
                 scores = pred['scores'].tolist()
 
                 signs = []
+                labels = pred['labels'].tolist()
                 for box, score in zip(boxes, scores):
                     # Save the tensors of each image
                     if score < 0.5:
@@ -46,6 +46,6 @@ class SignDetector:
 
                     sign_image = images[idx][:, int(y1):int(y2), int(x1): int(x2)]
                     signs.append(sign_image.clone())
-                sign_dictionary[image_id] = signs
+                sign_dictionary[image_id] = [signs, labels]
 
-        torch.save(sign_dictionary, 'sign_dictionary.pth')
+        torch.save(sign_dictionary, res_file)
