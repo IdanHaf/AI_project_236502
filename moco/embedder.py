@@ -39,9 +39,12 @@ class Embedder(nn.Module):
         self.queue = nn.functional.normalize(torch.randn(128, self.K), dim=0)
         self.queue_cords = torch.full((self.K, 2), 1000)  # max distance is 500 so it will be negative examples
 
-    def forward(self, x, coords):
+    def forward(self, x, coords=None):
         _query = self.backbone(x).flatten(start_dim=1)
         _query = self.projection_head(_query)
+
+        if coords is None:
+            return _query
 
         # update queue
         with torch.no_grad():
@@ -59,6 +62,15 @@ class Embedder(nn.Module):
         _key = self.backbone_momentum(x).flatten(start_dim=1)
         _key = self.projection_head_momentum(_key).detach()
         return _key
+
+    def load_csv(self, filename):
+        state_dict = torch.load(filename)
+
+        new_state_dict = {}
+        for key in state_dict:
+            new_key = key.replace('module.', '')  # Remove 'module.' prefix
+            new_state_dict[new_key] = state_dict[key]
+        self.load_state_dict(new_state_dict)
 
 
 def weighted_loss(q, queue, coord, queue_coords, t=0.07, max_dist=500):
@@ -193,3 +205,6 @@ for lr in [0.001, 0.0001]:
     plt.show()
 
     print(f'test loss: {validate(test_loader, model, weighted_loss)} lr {lr}')
+
+if __name__ == '__main__':
+    pass

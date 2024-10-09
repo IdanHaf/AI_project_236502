@@ -5,4 +5,4 @@
 #SBATCH -o train_moco.out
 #SBATCH -J train_embeddings
 
-python embedder.py
+python extract_baseset.py
