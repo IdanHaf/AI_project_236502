@@ -108,103 +108,104 @@ def validate(validation_loader, moco_model, criterion):
     return total_l / len(validation_loader)
 
 
-city_dataset_path = './Images'
-city_csv_file_path = './city_images_dataset.csv'
-big_dataset_path = './big_dataset'
-big_csv_file_path = './big_dataset_labeled.csv'
-
-transform = torchvision.transforms.Compose([transforms.Resize((224, 224)),
-                                            MoCoV2Transform(input_size=224, cj_prob=0.2, cj_bright=0.1, cj_contrast=0.1,
-                                                            cj_hue=0.1, cj_sat=0.1, min_scale=0.5,
-                                                            random_gray_scale=0.0),
-                                            ])
-
-dataset = CustomImageDataset(city_csv_file_path, city_dataset_path, big_csv_file_path, big_dataset_path, transform)
-
-train_size = int(0.6 * len(dataset))
-val_size = int(0.2 * len(dataset))
-test_size = len(dataset) - train_size - val_size
-
-generator = torch.Generator()
-generator.manual_seed(387642706252)
-dataset = data.dataset.LightlyDataset.from_torch_dataset(dataset)
-
-# Splitting the data.
-train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size], generator=generator)
-batch_size = 128
-workers = 2
-train_loader = DataLoader(train_dataset, batch_size=batch_size,
-                          shuffle=True, num_workers=workers, pin_memory=True)
-val_loader = DataLoader(val_dataset, batch_size=batch_size,
-                        shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=batch_size,
-                         shuffle=False)
-flag = True
-for lr in [0.001, 0.0001]:
-    resnet = torchvision.models.resnet18()
-    net = nn.Sequential(*list(resnet.children())[:-1])
-    model = Embedder(net)
-
-    if torch.cuda.device_count() > 1:
-        print(f'Using {torch.cuda.device_count()} GPUs!')
-        model = nn.DataParallel(model)
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model.to(device)
-    model.train()
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
-
-    epochs = 30
-    min_loss = float('inf')
-    train_losses = []
-    val_losses = []
-    print("Starting Training")
-    for epoch in range(epochs):
-        total_loss = 0
-        momentum_val = cosine_schedule(epoch, epochs, 0.996, 1)
-        for batch in train_loader:
-            images = batch[0]
-            labels, lat, lng = batch[1]
-            coords = torch.stack((lat, lng), dim=1)
-            x_query, _ = images
-
-            update_momentum(model.module.backbone, model.module.backbone_momentum, m=momentum_val)
-            update_momentum(
-                model.module.projection_head, model.module.projection_head_momentum, m=momentum_val
-            )
-            x_query = x_query.to(device)
-            query = model(x_query, coords)
-            loss = weighted_loss(query, model.module.queue, coords, model.module.queue_cords)
-            if flag:
-                print(f'coords are {coords}')
-                flag = False
-            total_loss += loss.detach()
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-
-        avg_loss = total_loss / len(train_loader)
-        train_losses.append(avg_loss)
-        val_loss = validate(val_loader, model, weighted_loss)
-        if val_loss <= min_loss:
-            torch.save(model.state_dict(), f'model_{epoch}_loss_{avg_loss}_{lr}.pth')
-
-        print(f"epoch: {epoch:>02}, loss: {avg_loss:.5f} lr: {lr}")
-        val_losses.append(val_loss)
-
-    epochs_a = np.arange(epochs)
-    plt.plot(epochs_a, train_losses, label=f'train loss {lr}')
-    plt.plot(epochs_a, val_losses, label=f'val loss {lr}')
-
-    plt.xlabel('epoch')
-    plt.ylabel('loss')
-    plt.title(f"train moco model with lr {lr}")
-    plt.grid(True)
-    plt.legend()
-    plt.savefig(f'moco_train_{lr}.png')
-    plt.show()
-
-    print(f'test loss: {validate(test_loader, model, weighted_loss)} lr {lr}')
-
 if __name__ == '__main__':
-    pass
+    print("train")
+    city_dataset_path = './Images'
+    city_csv_file_path = './city_images_dataset.csv'
+    big_dataset_path = './big_dataset'
+    big_csv_file_path = './big_dataset_labeled.csv'
+
+    transform = torchvision.transforms.Compose([transforms.Resize((224, 224)),
+                                                MoCoV2Transform(input_size=224, cj_prob=0.2, cj_bright=0.1,
+                                                                cj_contrast=0.1,
+                                                                cj_hue=0.1, cj_sat=0.1, min_scale=0.5,
+                                                                random_gray_scale=0.0),
+                                                ])
+
+    dataset = CustomImageDataset(city_csv_file_path, city_dataset_path, big_csv_file_path, big_dataset_path, transform)
+
+    train_size = int(0.6 * len(dataset))
+    val_size = int(0.2 * len(dataset))
+    test_size = len(dataset) - train_size - val_size
+
+    generator = torch.Generator()
+    generator.manual_seed(387642706252)
+    dataset = data.dataset.LightlyDataset.from_torch_dataset(dataset)
+
+    # Splitting the data.
+    train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size],
+                                                            generator=generator)
+    batch_size = 128
+    workers = 2
+    train_loader = DataLoader(train_dataset, batch_size=batch_size,
+                              shuffle=True, num_workers=workers, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size,
+                            shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size,
+                             shuffle=False)
+    flag = True
+    for lr in [0.001, 0.0001]:
+        resnet = torchvision.models.resnet18()
+        net = nn.Sequential(*list(resnet.children())[:-1])
+        model = Embedder(net)
+
+        if torch.cuda.device_count() > 1:
+            print(f'Using {torch.cuda.device_count()} GPUs!')
+            model = nn.DataParallel(model)
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model.to(device)
+        model.train()
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+
+        epochs = 30
+        min_loss = float('inf')
+        train_losses = []
+        val_losses = []
+        print("Starting Training")
+        for epoch in range(epochs):
+            total_loss = 0
+            momentum_val = cosine_schedule(epoch, epochs, 0.996, 1)
+            for batch in train_loader:
+                images = batch[0]
+                labels, lat, lng = batch[1]
+                coords = torch.stack((lat, lng), dim=1)
+                x_query, _ = images
+
+                update_momentum(model.module.backbone, model.module.backbone_momentum, m=momentum_val)
+                update_momentum(
+                    model.module.projection_head, model.module.projection_head_momentum, m=momentum_val
+                )
+                x_query = x_query.to(device)
+                query = model(x_query, coords)
+                loss = weighted_loss(query, model.module.queue, coords, model.module.queue_cords)
+                if flag:
+                    print(f'coords are {coords}')
+                    flag = False
+                total_loss += loss.detach()
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+
+            avg_loss = total_loss / len(train_loader)
+            train_losses.append(avg_loss)
+            val_loss = validate(val_loader, model, weighted_loss)
+            if val_loss <= min_loss:
+                torch.save(model.state_dict(), f'model_{epoch}_loss_{avg_loss}_{lr}.pth')
+
+            print(f"epoch: {epoch:>02}, loss: {avg_loss:.5f} lr: {lr}")
+            val_losses.append(val_loss)
+
+        epochs_a = np.arange(epochs)
+        plt.plot(epochs_a, train_losses, label=f'train loss {lr}')
+        plt.plot(epochs_a, val_losses, label=f'val loss {lr}')
+
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        plt.title(f"train moco model with lr {lr}")
+        plt.grid(True)
+        plt.legend()
+        plt.savefig(f'moco_train_{lr}.png')
+        plt.show()
+
+        print(f'test loss: {validate(test_loader, model, weighted_loss)} lr {lr}')

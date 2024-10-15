@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
 import tqdm
+
 filename = 'train.csv'
 sample_per_cluster = 100
-num_cluster=120
+num_cluster = 120
 
 if __name__ == '__main__':
     np.random.seed(7)

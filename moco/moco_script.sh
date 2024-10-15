@@ -5,4 +5,4 @@
 #SBATCH -o train_moco.out
 #SBATCH -J train_embeddings
 
-python extract_baseset.py
+python compare_nn.py
