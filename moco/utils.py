@@ -18,7 +18,7 @@ clusters_df['cluster_center'] = clusters_df['cluster_center'].apply(
 
 cluster_centers = np.radians(clusters_df['cluster_center'].to_list())
 distances_matrix = haversine_distances(cluster_centers) * 6371
-MAX_COMP_DISTANCE = 400
+MAX_COMP_DISTANCE = 500
 
 
 def expected_val(prob_vector, lat):
@@ -46,6 +46,7 @@ def Q_graph(arr, x_title, y_title, title, label, max_perc=100):
     plt.ylabel(y_title)
     plt.title(title)
     plt.grid(True)
+    plt.legend()
     plt.savefig(f'plots/{title}.png')
     plt.show()
 
@@ -240,12 +241,13 @@ def predict_location(q, lat, lng, baseset_df, K=1):
     df = baseset_df.copy()
     df['dists'] = df.apply(lambda row: haversine(lat, lng, row['lat'], row['lng']), axis=1)
     if len(df[df['dists'] <= MAX_COMP_DISTANCE].index) <= 5 * K:
-        df = df.nsmallest(5 * K, 'dists')
+        # In this case there isn't enough data around the image
+        return lat, lng
     else:
         df = df[df['dists'] <= MAX_COMP_DISTANCE]
 
     df['similarity'] = df.apply(lambda row: F.cosine_similarity(q.squeeze(0), row["query"], dim=0).item(), axis=1)
-    df = df.nsmallest(K, 'similarity')
+    df = df.nlargest(K, 'similarity')
     predicted_lat = df['lat'].mean()
     predicted_lng = df['lng'].mean()
     return predicted_lat, predicted_lng

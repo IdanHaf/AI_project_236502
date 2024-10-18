@@ -7,7 +7,6 @@ from torch import nn
 from torchvision.transforms import transforms
 import swifter
 
-
 import utils
 from embedder import Embedder
 from test_custom_dataset import CustomImageDataset
@@ -31,6 +30,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 dataset = CustomImageDataset(city_csv_file_path, city_dataset_path, big_csv_file_path, big_dataset_path, transform)
 
+
 def apply_row(n_errors, filtered_errors, original_errors, baseset, embedder, row):
     o_lat, o_lng = utils.get_cluster_center(np.argmax(row['prob_vector']))
     lat, lng = row['lat'], row['lng']
@@ -49,12 +49,13 @@ def apply_row(n_errors, filtered_errors, original_errors, baseset, embedder, row
     with torch.no_grad():
         q = embedder(img).cpu().detach()
 
-    for k in range(1, 10, 2):
+    for k in range(3, 9, 2):
         n_lat, n_lng = utils.predict_location(q, f_lat, f_lng, baseset, K=k)
         err = utils.haversine(n_lat, n_lng, lat, lng)
         if k not in n_errors:
             n_errors[k] = []
         n_errors[k].append(err)
+
 
 if __name__ == '__main__':
     baseset = utils.read_csv_with_tensor('baseset.csv', 'query')
@@ -69,7 +70,8 @@ if __name__ == '__main__':
     n_errors = {}
 
     print("start validating")
-    validation_df.swifter.apply(lambda row: apply_row(n_errors, filtered_errors, original_errors, baseset, embedder, row), axis=1)
+    validation_df.swifter.apply(
+        lambda row: apply_row(n_errors, filtered_errors, original_errors, baseset, embedder, row), axis=1)
 
     # plot the graphs
     plt.figure()
@@ -77,7 +79,7 @@ if __name__ == '__main__':
                   'Classifier')
     utils.Q_graph(filtered_errors, 'percentage of the dataset', 'Distance in KM', 'Quantile graph of the error',
                   'Filter')
-    for k in range(1, 10, 2):
+    for k in range(3, 9, 2):
         utils.Q_graph(n_errors[k], 'percentage of the dataset', 'Distance in KM', 'Quantile graph of the error',
                       f'{k} neighbors comparison')
     # Plot the first 70%
