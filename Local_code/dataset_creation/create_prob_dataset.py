@@ -7,7 +7,7 @@ import os
 # To get one, visit https://www.mapillary.com/dashboard/developer, go to 'developers',
 # Then 'register application', register a new application (read access atleast),
 # then copy & paste the 'Client Token' here
-# TODO:: add token.
+
 MLY_ACCESS_TOKEN = ''
 print(mly.set_access_token(MLY_ACCESS_TOKEN))
 
@@ -61,7 +61,7 @@ def extract_images(features, output_dir):
         else:
             print(f"Failed to get image URL for ID: {image_id}")
 
-        if num_images > 300:
+        if num_images > 400:
             break
 
     print(f"Saved {num_images}")
@@ -69,7 +69,7 @@ def extract_images(features, output_dir):
 
 if __name__ == "__main__":
 
-    labels = [9]
+    labels = [25, 26, 32, 33, 34, 36, 37, 20]
 
     for idx, label in enumerate(labels):
         json_file_path = os.path.join('./dataset_image_json', f'{label}.json')
