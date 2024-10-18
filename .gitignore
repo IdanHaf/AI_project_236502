@@ -1,0 +1,7 @@
+
+/.idea
+/sign classifier/dataset
+*.zip
+*.pth
+*.pth
+*.csv

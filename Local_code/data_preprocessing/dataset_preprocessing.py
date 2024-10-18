@@ -11,8 +11,12 @@ import os
 
 
 def create_csv_from_data(dir_path):
+    """
+    Create the big dataset csv
+    :param dir_path: The dir of the augmented images
+    :return: None
+    """
     img_files = os.listdir(dir_path)
-
     df = pd.DataFrame(img_files, columns=['id'])
 
     print(f"df length: {len(df)}")
@@ -21,38 +25,29 @@ def create_csv_from_data(dir_path):
     print("file saved")
 
 
-def expand_original_csv(csv_file):
-    df = pd.read_csv(csv_file)
-    num_cols = 4
-    expanded_rows = []
-
-    for _, row in df.iterrows():
-        for i in range(num_cols):
-            new_row = row.copy()
-            new_row['id'] = f"{row['id']}{i}.jpeg"
-            expanded_rows.append(new_row)
-
-    expanded_df = pd.DataFrame(expanded_rows)
-
-    output_file_path = './expanded_dataset.csv'
-    expanded_df.to_csv(output_file_path, index=False)
-
-    print("file saved")
-
-
 def add_coords_data(csv_file, extracted_csv):
+    """
+    Add coordinates to csv file
+    :param csv_file:  The original csv file
+    :param extracted_csv: The extracted csv file
+    """
     df1 = pd.read_csv(extracted_csv)
-
+    df1['temp'] = df1['id'].apply(lambda x: x.rsplit('.', 1)[0][:-1])
     # file with id, lat, and lng columns
     df2 = pd.read_csv(csv_file)
 
-    merged_df = pd.merge(df1, df2[['id', 'lat', 'lng']], on='id', how='left')
-
+    merged_df = pd.merge(df1, df2[['id', 'lat', 'lng']].rename(columns={"id":'temp'}), on='temp', how='left')
+    merged_df = merged_df[['id', 'lat', 'lng']]
     output_file_path = './merged_dataset.csv'
     merged_df.to_csv(output_file_path, index=False)
 
 
 def add_city_to_dataset(city_file, big_dataset_file):
+    """
+    Merge the city dataset with the big dataset
+    :param city_file: The city dataset
+    :param big_dataset_file: The big dataset file
+    """
     city_df = pd.read_csv(city_file)
     big_data_df = pd.read_csv(big_dataset_file)
 
@@ -172,5 +167,5 @@ def preprocess_datasets(combined_dataset_file_path, cities_dataset_file_path):
 
 if __name__ == "__main__":
     preprocess_datasets("./combined_city_and_big_dataset.csv",
-                        "./city_drop_cluster_dataset.csv")
+                        "./city_dataset_labels.csv")
 

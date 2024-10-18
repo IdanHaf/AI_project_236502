@@ -7,12 +7,13 @@ from PIL import Image
 
 # Handle the dataset.
 class CustomImageDataset(Dataset):
-    def __init__(self, city_csv_file, city_img_dir, big_csv_file, big_img_dir, transform=None):
+    def __init__(self, city_csv_file, city_img_dir, big_csv_file, big_img_dir, transform=None, get_id=False):
         self.city_img_labels = pd.read_csv(city_csv_file)
         self.city_img_dir = city_img_dir
         self.big_csv_file = pd.read_csv(big_csv_file)
         self.big_img_dir = big_img_dir
         self.transform = transform
+        self.get_id = get_id
 
     def __len__(self):
         total_length = len(self.city_img_labels) + len(self.big_csv_file)
@@ -33,7 +34,8 @@ class CustomImageDataset(Dataset):
                 image = self.transform(image)
 
             img_label = torch.tensor(class_num, dtype=torch.long)
-
+            if self.get_id:
+                return image, img_label, idx
             return image, img_label
 
         # Images are saved as: cityId_placeID_year_month_northdeg_latitude_longitude_panoid.jpg
@@ -59,4 +61,6 @@ class CustomImageDataset(Dataset):
         class_num = row['cluster_label']
         img_label = torch.tensor(class_num, dtype=torch.long)
 
+        if self.get_id:
+            return image, img_label, idx
         return image, img_label
