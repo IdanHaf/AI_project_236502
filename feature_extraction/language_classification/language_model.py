@@ -3,8 +3,10 @@ import torch.nn as nn
 import torchvision
 import numpy as np
 from PIL import Image
+import pandas as pd
 import easyocr
 import cv2
+from tqdm import tqdm
 
 
 class LanguageModel:
@@ -92,7 +94,7 @@ class LanguageModel:
             Apply the text detection model, and then using the script detection.
 
             :param img: Single image to detect language.
-            :returns: language probability vector.
+            :returns: numpy language probability vector.
         """
         text_img_lst = self.detect_text_from_image([img])[0]
 
@@ -113,6 +115,10 @@ class LanguageModel:
         max_probs = np.max(probabilities, axis=1)
         mask = max_probs > 0.6
         probabilities = probabilities[mask]
+
+        if len(probabilities) == 0:
+            return np.zeros(9)
+
         mean_prob = np.mean(probabilities, axis=0)
         # From mean vector, Filter low probabilities.
         mean_prob[mean_prob < 0.1] = 0
@@ -202,3 +208,22 @@ class LanguageModel:
                         predicted_probabilities.append(mean_prob)
 
         return predicted_probabilities
+
+    def export(self, dataset, result_file, convert_label):
+        df = pd.DataFrame(columns=['label', 'prob_vector'])
+        labels = []
+        probabilities = []
+
+        for idx in tqdm(range(len(dataset)), desc='Exporting'):
+            img, label = dataset[idx]
+            width, height = img.size
+            # Crop the bottom - possible timeline part
+            img = img.crop((0, 0, width, height - 35))
+            probability = self.detect_language(img)
+            probabilities.append(probability.tolist())
+            labels.append(int(convert_label[label]))
+
+        new_df = pd.DataFrame({'label': labels, 'prob_vector': probabilities})
+        df = pd.concat([df, new_df])
+
+        df.to_csv(result_file, index=False)

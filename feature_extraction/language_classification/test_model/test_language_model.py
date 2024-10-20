@@ -12,13 +12,13 @@ from PIL import Image
 from tqdm import tqdm
 
 
-def test_on_dataset(lang_model, transform):
+def test_on_dataset(lang_model, transform, dataset_path):
     """
         results:
         Label Recall: [0.935, 0.9, 0.72653061, 0.81773399, 0.92771084, 0.89711934,
                        0.95512821, 0.84466019, 0.95045045]
     """
-    test_dataset = CustomImageFolder(root='language_testing', transform=transform)
+    test_dataset = CustomImageFolder(root=dataset_path, transform=transform)
     print(f"labels: {test_dataset.classes}")
 
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
@@ -32,9 +32,20 @@ def test_on_single_image(lang_model):
         0.         0.2638536  0.        ]
     """
     #   Change with actual image path.
-    img = Image.open('./2668881190071418.jpg')
+    img = Image.open('./1362657911122507.jpg')
+    width, height = img.size
+    # Crop the bottom - possible timeline part
+    img = img.crop((0, 0, width, height - 35))
     probs = lang_model.detect_language(img)
     print(probs)
+
+
+def export_model(lang_model, dataset_path):
+    dataset = datasets.ImageFolder(root=dataset_path, transform=None)
+
+    print(f"labels: {dataset.classes}")
+
+    lang_model.export(dataset, "prob_dataset_language.csv", dataset.classes)
 
 
 if __name__ == "__main__":
@@ -59,4 +70,4 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load(model_dict_path))
 
     lang_model = LanguageModel(transform, model, device)
-    test_on_single_image(lang_model)
+    export_model(lang_model, "../prob_dataset")
