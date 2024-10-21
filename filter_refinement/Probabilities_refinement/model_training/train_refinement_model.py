@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader, random_split
 import torchvision
 from torchvision import datasets
 from refinementCustomDatasets.custom_dataset import CustomRefinementDataset
-from model.RefinementModel import RefinementModel, train_model, validation_loop
+from model.RefinementModel import RefinementModel, train_model, validation_test_loop
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import Counter
@@ -99,16 +99,14 @@ if __name__ == "__main__":
     generator.manual_seed(387642706252)
 
     train_dataset, val_dataset, test_d = random_split(dataset, [train_size, val_size, test_size], generator=generator)
-    # Plot histogram of the train and val datasets.
-    plot_val(val_dataset, "val")
-    plot_val(train_dataset, "train")
-    plot_val(test_d, "test")
+    # Plot histogram of the val datasets.
+    # plot_val(val_dataset, "val")
 
     all_models_training_loss = []
     all_models_val_accuracy = []
 
-    batch_sizes = [64, 128, 32]
-    learning_rates = [0.0001, 0.0005, 0.00075, 0.001]
+    batch_sizes = [32, 64, 128]
+    learning_rates = [0.0008, 0.001, 0.0012, 0.0001]
 
     # Hyperparameter tuning (grid-search).
     for batch_size in batch_sizes:
@@ -132,7 +130,7 @@ if __name__ == "__main__":
                                                                device,
                                                                loss_func,
                                                                optimizer,
-                                                               50,
+                                                               150,
                                                                f"{batch_size}_{learning_rate}_refinement")
 
             plot_loss_and_accuracy(train_losses, val_loss, val_accuracy, learning_rate, batch_size)
@@ -140,3 +138,4 @@ if __name__ == "__main__":
             all_models_val_accuracy.append((val_accuracy, learning_rate, batch_size))
 
     plot_hyperparameter_tuning_results(all_models_training_loss, all_models_val_accuracy)
+

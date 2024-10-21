@@ -17,6 +17,7 @@ class CustomRefinementDataset(Dataset):
         region_prob = ast.literal_eval(row['prob_vector'])
         lang_prob = ast.literal_eval(row['lang_probs'])
         label = row['label']
+        coords = ast.literal_eval(row['coords'])
 
         prob_input = region_prob + lang_prob
 
@@ -24,6 +25,8 @@ class CustomRefinementDataset(Dataset):
 
         label_tensor = torch.tensor(label, dtype=torch.long)
 
-        return prob_tensor, label_tensor
+        coords_tensor = torch.tensor(coords, dtype=torch.float32)
+
+        return prob_tensor, label_tensor, coords_tensor
 
 
