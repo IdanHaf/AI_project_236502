@@ -15,7 +15,7 @@ validation = 'val.csv'
 model_weights = 'model.pth'
 
 validation_df = utils.read_vector_csv(validation, 'prob_vector')
-
+validation_df = validation_df.sample(frac=0.1, replace=False, random_state=42)
 city_dataset_path = './Images'
 city_csv_file_path = './city_images_dataset.csv'
 big_dataset_path = './big_dataset'
@@ -49,7 +49,7 @@ def apply_row(n_errors, filtered_errors, original_errors, baseset, embedder, row
     with torch.no_grad():
         q = embedder(img).cpu().detach()
 
-    for k in range(3, 9, 2):
+    for k in range(5, 20, 5):
         n_lat, n_lng = utils.predict_location(q, f_lat, f_lng, baseset, K=k)
         err = utils.haversine(n_lat, n_lng, lat, lng)
         if k not in n_errors:
@@ -79,7 +79,7 @@ if __name__ == '__main__':
                   'Classifier')
     utils.Q_graph(filtered_errors, 'percentage of the dataset', 'Distance in KM', 'Quantile graph of the error',
                   'Filter')
-    for k in range(3, 9, 2):
+    for k in range(5, 20, 5):
         utils.Q_graph(n_errors[k], 'percentage of the dataset', 'Distance in KM', 'Quantile graph of the error',
                       f'{k} neighbors comparison')
     # Plot the first 70%
@@ -88,6 +88,6 @@ if __name__ == '__main__':
                   'Classifier', max_perc=70)
     utils.Q_graph(filtered_errors, 'percentage of the dataset', 'Distance in KM', 'Quantile graph of the error to 70%',
                   'Filter', max_perc=70)
-    for k in range(1, 10, 2):
+    for k in range(5, 20, 5):
         utils.Q_graph(n_errors[k], 'percentage of the dataset', 'Distance in KM', 'Quantile graph of the error to 70%',
                       f'{k} neighbors comparison', max_perc=70)
