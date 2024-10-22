@@ -10,11 +10,24 @@ from tqdm import tqdm
 
 
 class LanguageModel:
-    def __init__(self, transform, model, device):
+    def __init__(self, model_dict_path, transform=None):
         self.transform = transform
 
+        model = torchvision.models.efficientnet_b3(weights=None)
+
+        # Changing the last layer.
+        num_features = model.classifier[1].in_features
+        model.classifier[1] = nn.Linear(num_features, 9)
+
+        model = nn.DataParallel(model)
+
+        # Loading the model weights.
+        model.load_state_dict(torch.load(model_dict_path))
+
         self.model = model
-        self.device = device
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print("Gpu is available: " + str(torch.cuda.is_available()))
+
         self.model.to(self.device)
         self.model.eval()
 
@@ -69,7 +82,6 @@ class LanguageModel:
                 cropped_img = img[top_left[1]:bottom_right[1], top_left[0]:bottom_right[0]]
 
                 if cropped_img is None or cropped_img.size == 0:
-                    print(f"invalid image skipping...")
                     continue
 
                 # Defined as "too low resolution".
@@ -129,6 +141,16 @@ class LanguageModel:
             mean_prob /= sum_probs
 
         return mean_prob
+
+    def list_detect_language(self, images):
+        """
+            Apply detect_language on list of images.
+
+            :param images: list of images to detect language.
+            :returns: list of languages probabilities lists.
+        """
+        predictions = [self.detect_language(img).tolist() for img in images]
+        return predictions
 
     def test_model(self, test_loader):
         """

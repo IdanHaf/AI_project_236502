@@ -60,14 +60,5 @@ if __name__ == "__main__":
 
     model_dict_path = './b3_language_best_lr0.002_batch32.pth'
 
-    model = torchvision.models.efficientnet_b3(weights=None)
-    num_features = model.classifier[1].in_features
-    model.classifier[1] = nn.Linear(num_features, 9)
-
-    model = nn.DataParallel(model)
-
-    loss_func = nn.CrossEntropyLoss()
-    model.load_state_dict(torch.load(model_dict_path))
-
-    lang_model = LanguageModel(transform, model, device)
+    lang_model = LanguageModel(model_dict_path, transform)
     export_model(lang_model, "../prob_dataset")
