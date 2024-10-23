@@ -226,12 +226,12 @@ def plot_test_results(data_loader, model, device, df_clusters_center):
     with torch.no_grad():
         for inputs, labels, coords in tqdm(data_loader, desc="Batch"):
             before_lat_values = np.array([expected_val(df_clusters_center, prediction[:120], True)
-                                         for prediction in inputs])
+                                          for prediction in inputs])
             before_lng_values = np.array([expected_val(df_clusters_center, prediction[:120], False)
-                                         for prediction in inputs])
+                                          for prediction in inputs])
 
             before_batch_dist = np.array([haversine(e_lat, before_lng_values[idx], coords[idx][0], coords[idx][1])
-                                         for idx, e_lat in enumerate(before_lat_values)])
+                                          for idx, e_lat in enumerate(before_lat_values)])
 
             before_dist = np.concatenate((before_dist, before_batch_dist))
 
