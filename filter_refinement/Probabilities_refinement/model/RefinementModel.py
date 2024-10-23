@@ -28,6 +28,19 @@ class RefinementModel(nn.Module):
         return x
 
 
+def refine_probability_list(model, prob_list):
+    """
+    :param model: refinement model.
+    :param prob_list: list of combined probabilities of region classifier and language classifier.
+
+    :return: list of refinement probabilities.
+    """
+    outputs = model(prob_list)
+    probabilities = nn.functional.softmax(outputs, dim=1).tolist()
+
+    return probabilities
+
+
 def validation_test_loop(data_loader, model, device, criterion):
     """
     Validate or test model on the dataloader.
