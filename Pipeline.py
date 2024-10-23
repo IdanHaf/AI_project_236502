@@ -6,7 +6,7 @@ from torch import nn
 from torchvision.transforms import transforms
 
 from feature_extraction.feature_extractor import FeatureExtractor
-from filter_refinement.Probabilities_refinement.model.RefinementModel import RefinementModel
+from filter_refinement.Probabilities_refinement.model.RefinementModel import RefinementModel, refine_probability_list
 from moco import utils
 from moco.embedder import Embedder
 
@@ -31,7 +31,7 @@ class Atlas:
 
     def predict(self, images_path):
         vectors = self.extractor.extract_features(images_path)
-        refined_vectors = [self.refiner(vector) for vector in vectors]
+        refined_vectors = refine_probability_list(self.refiner, vectors)
         filtered_vectors = [utils.cluster_filter(utils.distances_matrix, vec) for vec in refined_vectors]
         predictions = [(utils.expected_val(f_vec, lat=True), utils.expected_val(f_vec, lat=False)) for f_vec in filtered_vectors]
 
