@@ -1,4 +1,4 @@
-# Geolocation project
+# ATLAS - Geolocation project
 In this file we would explain our code briefly
 ## dataset visualization
 This folder has our code to visualize where our images from one of the datasets are from.

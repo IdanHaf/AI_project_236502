@@ -8,7 +8,7 @@ from test_custom_dataset import CustomImageDataset
 
 
 class Classifier:
-    def __init__(self, transform=None):
+    def __init__(self, model_weights_path, transform=None):
         self.transform = transform
         model = torchvision.models.resnet50(weights=None)
 
@@ -20,14 +20,40 @@ class Classifier:
         model = nn.DataParallel(model)
 
         # Loading the model.
-        model_dict_path = '../classification_best_lr0.0005_batch64.pth'
+        model_dict_path = model_weights_path
         model.load_state_dict(torch.load(model_dict_path))
         model.eval()
         self.model = model
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print("Gpu is available: " + str(torch.cuda.is_available()))
 
-    def predict(self, images):
+    def predict_list_images(self, images):
+        """
+            Give a prediction for list of images.
+            :param images: list of images.
+
+            :return: list of probabilities predicted for each image.
+        """
+        self.model.to(self.device)
+        self.model.eval()
+        # If no images were given.
+        if len(images) == 0:
+            raise ValueError("Array of images was empty")
+
+        images_transformed = [self.transform(img) for img in images]
+
+        images_batch = torch.stack(images_transformed, dim=0)
+        images_batch = images_batch.to(self.device)
+
+        with torch.no_grad():
+            outputs = self.model(images_batch)
+
+        probabilities = nn.functional.softmax(outputs, dim=1).cpu().numpy()
+        probabilities = [prob.tolist() for prob in probabilities]
+
+        return probabilities
+
+    def predict_loader_batch(self, images):
         self.model.eval()
         with torch.no_grad():
             images = images.to(self.device)
@@ -38,7 +64,7 @@ class Classifier:
     def export(self, dataloader, result_file):
         df = pd.DataFrame(columns=['id', 'lat', 'lng', 'label', 'prob_vector'])
         for images, labels, lat, lng, ids in dataloader:
-            probabilities = self.predict(images)
+            probabilities = self.predict_loader_batch(images)
             probabilities = probabilities.cpu().numpy()
             probabilities = [prob.tolist() for prob in probabilities]
             new_df = pd.DataFrame({'id': ids, 'lat': lat, 'lng': lng, 'label': labels, 'prob_vector': probabilities})
@@ -60,7 +86,7 @@ class Classifier:
         counter = 0
         df = pd.DataFrame(columns=['label', 'prob_vector'])
         for images, labels in tqdm(dataloader, desc="Processing batches"):
-            probabilities = self.predict(images).cpu().numpy()
+            probabilities = self.predict_loader_batch(images).cpu().numpy()
             _, predicted_labels = torch.max(torch.tensor(probabilities), 1)
 
             probabilities = [prob.tolist() for prob in probabilities]

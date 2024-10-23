@@ -1,6 +1,6 @@
 
 /.idea
-/sign classifier/dataset
+/not_using/sign classifier/dataset
 *.zip
 *.pth
 *.pth

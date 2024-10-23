@@ -1,1 +1,0 @@
-In this model we used the mapillary traffic signs dataset from https://www.mapillary.com/dataset/trafficsign
