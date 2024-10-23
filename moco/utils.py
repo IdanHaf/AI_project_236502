@@ -18,7 +18,7 @@ clusters_df['cluster_center'] = clusters_df['cluster_center'].apply(
 
 cluster_centers = np.radians(clusters_df['cluster_center'].to_list())
 distances_matrix = haversine_distances(cluster_centers) * 6371
-MAX_COMP_DISTANCE = 250
+MAX_COMP_DISTANCE = 500
 
 
 def expected_val(prob_vector, lat):
