@@ -1,3 +1,4 @@
+import numpy as np
 import torchvision.transforms as transforms
 from feature_extraction.language_classification.language_model import LanguageModel
 from feature_extraction.region_classifier.classifier import Classifier
@@ -39,7 +40,8 @@ class FeatureExtractor:
         regions_probabilities = region_classifier.predict_list_images(images_to_predict)
         lang_probabilities = lang_model.list_detect_language(images_to_predict)
 
-        combine_probs = [(reg_prob + lang_prob) for reg_prob, lang_prob in zip(regions_probabilities, lang_probabilities)]
+        combine_probs = [(reg_prob + lang_prob) for reg_prob, lang_prob in
+                         zip(regions_probabilities, lang_probabilities)]
 
         return combine_probs
 
@@ -53,7 +55,7 @@ class FeatureExtractor:
         regions_probabilities = self.region_classifier.predict_list_images(images)
         lang_probabilities = self.lang_model.list_detect_language(images)
 
-        combine_probs = [(reg_prob + lang_prob) for reg_prob, lang_prob in
+        combine_probs = [(reg_prob + lang_prob) if not np.all(lang_prob == np.zeros(9)) else reg_prob for reg_prob, lang_prob in
                          zip(regions_probabilities, lang_probabilities)]
 
         return combine_probs

@@ -45,8 +45,12 @@ class Atlas:
         with torch.no_grad():
             images = [ToPILImage()(image) for image in images]
             vectors = self.extractor.extract_features_from_images(images)
-            vectors = torch.tensor(vectors)
-            refined_vectors = refine_probability_list(self.refiner, vectors)
+            refined_vectors = []
+            for vec in vectors:
+                if len(vec) == 120:
+                    refined_vectors.append(vec)
+                else:
+                    refined_vectors.append(refine_probability_list(self.refiner, torch.tensor(vec).unsqueeze(0))[0])
             filtered_vectors = [utils.cluster_filter(utils.distances_matrix, vec) for vec in refined_vectors]
             predictions = [(utils.expected_val(f_vec, lat=True), utils.expected_val(f_vec, lat=False)) for f_vec in
                            filtered_vectors]
