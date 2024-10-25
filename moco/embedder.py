@@ -40,6 +40,12 @@ class Embedder(nn.Module):
         self.queue_cords = torch.full((self.K, 2), 1000)  # max distance is 500 so it will be negative examples
 
     def forward(self, x, coords=None):
+        """
+        The forward pass of the model
+        :param x: The input images
+        :param coords: The coordinate of the images
+        :return: The output query
+        """
         _query = self.backbone(x).flatten(start_dim=1)
         _query = self.projection_head(_query)
 
@@ -59,11 +65,20 @@ class Embedder(nn.Module):
         return _query
 
     def forward_momentum(self, x):
+        """
+        Extract the key of x
+        :param x: The image
+        :return: The output key
+        """
         _key = self.backbone_momentum(x).flatten(start_dim=1)
         _key = self.projection_head_momentum(_key).detach()
         return _key
 
     def load_csv(self, filename):
+        """
+        Load weights from pre-existing file
+        :param filename: The filename of the weights
+        """
         state_dict = torch.load(filename)
 
         new_state_dict = {}
@@ -74,6 +89,16 @@ class Embedder(nn.Module):
 
 
 def weighted_loss(q, queue, coord, queue_coords, t=0.07, max_dist=500):
+    """
+    Calculate the loss on the current image
+    :param q: The query image
+    :param queue: The current queue of the model
+    :param coord: The coordinate of the image
+    :param queue_coords: The coordinate of the queue images.
+    :param t: the temperature
+    :param max_dist: Max distance for calculation
+    :return: The loss values
+    """
     queue = queue.to(q.device)
     queue_coords = queue_coords.to(q.device)
     logits = torch.matmul(q, queue.clone().detach()) / t
@@ -91,6 +116,13 @@ def weighted_loss(q, queue, coord, queue_coords, t=0.07, max_dist=500):
 
 
 def validate(validation_loader, moco_model, criterion):
+    """
+    Validation run on the model
+    :param validation_loader: The validation loader
+    :param moco_model: The moco model
+    :param criterion: The loss function
+    :return: The average loss of the model
+    """
     moco_model.eval()
     total_l = 0
     for batch in train_loader:

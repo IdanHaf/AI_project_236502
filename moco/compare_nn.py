@@ -37,6 +37,16 @@ dataset = CustomImageDataset(city_csv_file_path, city_dataset_path, big_csv_file
 
 
 def apply_row(n_errors, filtered_errors, original_errors, baseset, embedder, row, mode=False):
+    """
+    The function that applies the algorithm to each row.
+    :param n_errors: The list of moco errors
+    :param filtered_errors: The list of filtered errors
+    :param original_errors: The list of errors on the original classifier
+    :param baseset: The baseset df
+    :param embedder: The model
+    :param row: The row data
+    :param mode: Whether we tune parameters or test
+    """
     o_lat, o_lng = utils.get_cluster_center(np.argmax(row['prob_vector']))
     lat, lng = row['lat'], row['lng']
     o_err = utils.haversine(o_lat, o_lng, lat, lng)
