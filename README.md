@@ -18,11 +18,11 @@ This file was taken from https://blogs.codingballad.com/unwrapping-the-view-tran
 augment.py - This file convert the photosphere dataset to planar images. It requires the original dataset to be in a directory called images and saves the output to directory called big_dataset
 It also creates a csv augmented_data.csv to find the data on each image.
 ### language_classification
-`/languageCustomDatasets` - containes the customs datasets needed for orgenaizing the dataset.
-`/model_training` - containes the file with the training and validation loop, Hyperparameter tuning, and plotting the results for classifing the language.
-`/test_model` - containes the file with the model testing loop for classifing the language.
-`/utils` - containes the code to generate the quantile graph of predicted error after expected value.
-`/language_model.py` - The file with the class of the trained model (both detecting the text and then classifing the language.
+`/languageCustomDatasets` - containes the customs datasets needed for orgenaizing the dataset.<br />
+`/model_training` - containes the file with the training and validation loop, Hyperparameter tuning, and plotting the results for classifing the language.<br />
+`/test_model` - containes the file with the model testing loop for classifing the language.<br />
+`/utils` - containes the code to generate the quantile graph of predicted error after expected value.<br />
+`/language_model.py` - The file with the class of the trained model (both detecting the text and then classifing the language.<br />
 
 ## filter_refinement
 ### filtering
