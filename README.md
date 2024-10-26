@@ -11,17 +11,24 @@ It requires the images.csv of the photospheres dataset<br />
 ### `./feature_extraction`
 This folder contain the code for the first stage of our pipeline.
 * #### `./feature_extraction/Local code`
+
 * #### `./feature_extraction/data augmentation`
-    - This is the code we used to convert the panoramic images to planar images. It requires the images.csv of the photospheres dataset
+    * This is the code we used to convert the panoramic images to planar images. It requires the images.csv of the photospheres dataset
     * `convert_panorama.py` - This file has the function `panorama_to_plane`, which receive a path to a panoramic image, the FOV of the image, the output size of the image, the yaw and pitch angles of the planar image. This file was taken from https://blogs.codingballad.com/unwrapping-the-view-transforming-360-panoramas-into-intuitive-videos-with-python-6009bd5bca94
     * `augment.py` - This file convert the photosphere dataset to planar images. It requires the original dataset to be in a directory called images and saves the output to directory called big_dataset. It also creates a csv augmented_data.csv to find the data on each image.
-#### `./feature_extraction/language_classification`
-`/languageCustomDatasets` - containes the customs datasets needed for orgenaizing the dataset.<br />
-`/model_training` - containes the file with the training and validation loop, Hyperparameter tuning, and plotting the results for classifing the language.<br />
-`/test_model` - containes the file with the model testing loop for classifing the language.<br />
-`/utils` - containes the code to generate the quantile graph of predicted error after expected value.<br />
-`/language_model.py` - The file with the class of the trained model (both detecting the text and then classifing the language.<br />
-
+    * 
+* #### `./feature_extraction/language_classification`
+    * `/languageCustomDatasets` - containes the customs datasets needed for orgenaizing the dataset.<br />
+    * `/model_training` - containes the file with the training and validation loop, Hyperparameter tuning, and plotting the results for classifing the language.<br />
+    * `/test_model` - containes the file with the model testing loop for classifing the language.<br />
+    * `/utils` - containes the code to generate the quantile graph of predicted error after expected value.<br />
+    * `/language_model.py` - The file with the class of the trained model (both detecting the text and then classifing the language).<br />
+    
+* #### `./feature_extraction/region_classifier`
+    * `/classifier.py` - the class of the trained classifier model.<br />
+    * `/prob_extractor.py` - extracts the results of the model on test set to csv file.<br />
+    * `/prob_script.sh` - script for running on the lambda server.<br />
+    * `/test_custom_dataset.py` - containes the customs datasets needed for orgenaizing the test dataset.<br />
 ## filter_refinement
 ### filtering
 This folder contains the code we used to filter the probability vector we received from the classifier based on certain filters.
