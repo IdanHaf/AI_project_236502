@@ -26,7 +26,7 @@ class Embedder(nn.Module):
         super().__init__()
 
         self.backbone = backbone
-        # We use resnet 50 so our input is 512
+        # We use resnet2 50 so our input is 512
         self.projection_head = MoCoProjectionHead(512, 512, 128)
 
         self.backbone_momentum = copy.deepcopy(self.backbone)
