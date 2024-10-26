@@ -1,6 +1,6 @@
 import torch
 import torchvision
-from PIL.Image import Image
+from PIL import Image
 from lightly.transforms import MoCoV2Transform
 from torch import nn
 from torchvision.transforms import transforms
@@ -30,32 +30,31 @@ class Atlas:
         self.k = k
         self.baseset = utils.read_csv_with_tensor(baseset, 'query')
 
+    def predict_from_vectors(self, vectors, images):
+        refined_vectors = []
+        for vec in vectors:
+            if len(vec) == 120:
+                refined_vectors.append(vec)
+            else:
+                refined_vectors.append(refine_probability_list(self.refiner, torch.tensor(vec).unsqueeze(0))[0])
+        filtered_vectors = [utils.cluster_filter(utils.distances_matrix, vec) for vec in refined_vectors]
+        predictions = [(utils.expected_val(f_vec, lat=True), utils.expected_val(f_vec, lat=False)) for f_vec in
+                       filtered_vectors]
+
+        queries = [self.embedder(self.moco_transform(img)[0].unsqueeze(0)) for img in images]
+        final_predictions = [utils.predict_location(q, co[0], co[1], self.baseset, K=self.k) for q, co in
+                             zip(queries, predictions)]
+        return final_predictions
+
     def predict(self, images_path):
         vectors = self.extractor.extract_features(images_path)
-        refined_vectors = refine_probability_list(self.refiner, vectors)
-        filtered_vectors = [utils.cluster_filter(utils.distances_matrix, vec) for vec in refined_vectors]
-        predictions = [(utils.expected_val(f_vec, lat=True), utils.expected_val(f_vec, lat=False)) for f_vec in filtered_vectors]
+        images = [Image.open(image_path) for image_path in images_path]
 
-        images = [self.moco_transform(Image.open(image_path)) for image_path in images_path]
-        queries = [self.embedder(img) for img in images]
-        final_predictions = [utils.predict_location(q, co[0], co[1], self.baseset, K=self.k) for q, co in zip(queries, predictions)]
-        return final_predictions
+        return self.predict_from_vectors(vectors, images)
 
     def predict_from_images(self, images):
         with torch.no_grad():
             images = [ToPILImage()(image) for image in images]
             vectors = self.extractor.extract_features_from_images(images)
-            refined_vectors = []
-            for vec in vectors:
-                if len(vec) == 120:
-                    refined_vectors.append(vec)
-                else:
-                    refined_vectors.append(refine_probability_list(self.refiner, torch.tensor(vec).unsqueeze(0))[0])
-            filtered_vectors = [utils.cluster_filter(utils.distances_matrix, vec) for vec in refined_vectors]
-            predictions = [(utils.expected_val(f_vec, lat=True), utils.expected_val(f_vec, lat=False)) for f_vec in
-                           filtered_vectors]
 
-            queries = [self.embedder(self.moco_transform(img)[0].unsqueeze(0)) for img in images]
-            final_predictions = [utils.predict_location(q, co[0], co[1], self.baseset, K=self.k) for q, co in
-                                 zip(queries, predictions)]
-        return final_predictions
+        return self.predict_from_vectors(vectors, images)

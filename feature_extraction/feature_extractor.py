@@ -25,22 +25,14 @@ class FeatureExtractor:
 
         :return: list of extracted probabilities for each image.
         """
-        transform = transforms.Compose([
-            transforms.Resize((256, 256)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
-
-        region_classifier = Classifier(transform, self.region_model_path)
-        lang_model = LanguageModel(self.language_model_path, transform)
 
         images_to_predict = [Image.open(img_path) for img_path in images_path_list]
 
         # Get probabilities vectors for images from region classifier and language.
-        regions_probabilities = region_classifier.predict_list_images(images_to_predict)
-        lang_probabilities = lang_model.list_detect_language(images_to_predict)
+        regions_probabilities = self.region_classifier.predict_list_images(images_to_predict)
+        lang_probabilities = self.lang_model.list_detect_language(images_to_predict)
 
-        combine_probs = [(reg_prob + lang_prob) for reg_prob, lang_prob in
+        combine_probs = [(reg_prob + lang_prob) if not np.all(lang_prob == np.zeros(9)) else reg_prob for reg_prob, lang_prob in
                          zip(regions_probabilities, lang_probabilities)]
 
         return combine_probs
