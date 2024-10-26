@@ -1,9 +1,13 @@
 # ATLAS - Geolocation project
-In this file we would explain our code briefly
+In this project we are trying to predict the geographical location of a given image.
+### Our model pipeline
+![Image of our model pipeline](/images/pipeline.png)
+
 ## Code structure
-`Pipeline.py`- contain the Atlas class which is our entire pipeline. <br />
-`run_testset.py` - The script that extract the results of our pipeline on the testset, require paths to the dataset folders and model weights.<br />
-`parse_results.ipynb` - Parse the experiments results both from run_testset and from compare_nn.py, requires their outputs csvs to be in the same folder.<br />
+### `Pipeline.py`- contain the Atlas class which is our entire pipeline.
+### `run_testset.py` - The script that extract the results of our pipeline on the testset, require paths to the dataset folders and model weights.
+### `parse_results.ipynb` - Parse the experiments results both from run_testset and from compare_nn.py, requires their outputs csvs to be in the same folder.
+
 ### `./dataset visualization`
 This folder has our code to visualize where our images from one of the datasets are from.<br />
 It requires the images.csv of the photospheres dataset<br />
@@ -19,10 +23,11 @@ This folder contain the code for the first stage of our pipeline.
     * `augment.py` - This file convert the photosphere dataset to planar images. It requires the original dataset to be in a directory called images and saves the output to directory called big_dataset. It also creates a csv augmented_data.csv to find the data on each image.
        
 * #### `./feature_extraction/language_classification`
-    * `/languageCustomDatasets` - containes the customs datasets needed for orgenaizing the dataset.
-    * `/model_training` - containes the file with the training and validation loop, Hyperparameter tuning, and plotting the results for classifing the language.
-    * `/test_model` - containes the file with the model testing loop for classifing the language.
-    * `/utils` - containes the code to generate the quantile graph of predicted error after expected value.
+    * `/languageCustomDatasets/custom_dataset.py` - Customs datasets needed for orgenaizing the dataset.
+    * `/model_training/language_classifier.py` - The training and validation loop, Hyperparameter tuning, and plotting the results.
+    * `/test_model/test_language_model.py` - containes the file with the model testing loop for classifing the language.
+    * `/test_model/lang_script.sh` - script for running on the lambda server.
+    * `/utils/graph_generator.py` - containes the code to generate the quantile graph of predicted error after expected value.
     * `/language_model.py` - The file with the class of the trained model (both detecting the text and then classifing the language).
     
 * #### `./feature_extraction/region_classifier`
@@ -45,8 +50,8 @@ This folder contain the code for the first stage of our pipeline.
 * #### `./filter_refinement/filtering`
    * This folder contains the code we used to filter the probability vector we received from the classifier based on certain filters.
      it requires the big_dataset_labeled.csv and model_lr0.0005_predictions_with_prob.csv
-   * get_clusters.py- Creates the clusters.csv which holds the center of all the clusters.
-   * filter_test.py - This script implement our 2 filter methods and compare them by creating a quantile graph of them. The main functions are `cluster_filter` and `deviation_filter`.
+   * `get_clusters.py` - Creates the clusters.csv which holds the center of all the clusters.
+   * `filter_test.py` - This script implement our 2 filter methods and compare them by creating a quantile graph of them. The main functions are `cluster_filter` and `deviation_filter`.
 
 ### Rest is you buddy
 ## moco
