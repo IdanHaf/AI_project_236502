@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Image and Map</title>
+    <script>
+        let currentLat = null;
+        let currentLon = null;
+
+        async function pickRandomImage() {
+            const response = await fetch('/random-image');
+            const data = await response.json();
+            const imageUrl = `/static/Images/${data.image.trim()}`;
+            document.getElementById('uploadedImage').src = imageUrl;
+            document.getElementById('coordinates').textContent = `Coordinates: ${data.lat}, ${data.lon}`;
+
+            currentLat = data.lat;
+            currentLon = data.lon;
+
+            document.getElementById('imageContainer').style.display = 'block';
+            document.getElementById('showMapBtn').style.display = 'block';
+            document.getElementById('loadNewImageBtn').style.display = 'none';
+            document.getElementById('coordInputContainer').style.display = 'none';
+        }
+
+        function openFileDialog() {
+            document.getElementById('imageUpload').click();
+        }
+
+        function uploadImage() {
+            const fileInput = document.getElementById('imageUpload');
+            const file = fileInput.files[0];
+            if (file) {
+                const imageUrl = URL.createObjectURL(file);
+                document.getElementById('uploadedImage').src = imageUrl;
+                document.getElementById('imageContainer').style.display = 'block';
+                document.getElementById('showMapBtn').style.display = 'block';
+                document.getElementById('loadNewImageBtn').style.display = 'none';
+                document.getElementById('coordInputContainer').style.display = 'block';
+                currentLat = null;
+                currentLon = null;
+            }
+        }
+
+        async function showMap() {
+            const latInput = document.getElementById('lat').value;
+            const lonInput = document.getElementById('lon').value;
+            const coordInputContainer = document.getElementById('coordInputContainer');
+
+            let mapUrl = '/generate-map';
+            if (coordInputContainer.style.display !== 'none') {
+                if (latInput && lonInput) {
+                    const lat = parseFloat(latInput);
+                    const lon = parseFloat(lonInput);
+                    mapUrl += (!isNaN(lat) && !isNaN(lon)) ? `/${lat}/${lon}` : '/no-pin/no-pin';
+                } else {
+                    mapUrl += '/no-pin/no-pin';
+                }
+            } else {
+                mapUrl += `/${currentLat}/${currentLon}`;
+            }
+
+            const mapResponse = await fetch(mapUrl);
+            const mapData = await mapResponse.json();
+
+            document.getElementById('mapContent').innerHTML = `<iframe src="${mapData.map}" width="100%" height="100%" style="border: none;"></iframe>`;
+            document.getElementById('mapOverlay').style.display = 'block';
+            document.getElementById('overlayBackground').style.display = 'block';
+        }
+
+        function closeMap() {
+            document.getElementById('mapOverlay').style.display = 'none';
+            document.getElementById('overlayBackground').style.display = 'none';
+            document.getElementById('mapContent').innerHTML = '';
+        }
+
+        function loadNewImage() {
+            document.getElementById('imageContainer').style.display = 'none';
+            document.getElementById('map').innerHTML = '';
+            document.getElementById('loadNewImageBtn').style.display = 'none';
+            document.getElementById('showMapBtn').style.display = 'block';
+            document.getElementById('coordInputContainer').style.display = 'none';
+            pickRandomImage();
+        }
+    </script>
+    <style>
+        body {
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100vw;
+        }
+
+        #imageContainer {
+            margin-top: 20px;
+            display: none;
+        }
+
+        #loadNewImageBtn {
+            display: none;
+            margin-top: 20px;
+        }
+
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #showMapBtn {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #coordInputContainer {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #coordInputContainer input {
+            margin: 5px;
+            padding: 10px;
+            width: 100px;
+        }
+
+        /* Popup overlay styling */
+        #mapOverlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw;
+            height: 80vh;
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: none;
+            padding: 0; /* Remove padding to allow full use of the height */
+        }
+
+        /* Dark background overlay behind the popup */
+        #overlayBackground {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        /* Style for close button */
+        #closeMapBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        /* Style for the iframe */
+        #mapContent {
+            width: 100%;
+            height: 100%;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Choose an Image</h1>
+    <button onclick="pickRandomImage()">Pick Random</button>
+    <button onclick="openFileDialog()">Upload</button>
+    
+    <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="uploadImage()">
+    
+    <div id="imageContainer">
+        <h2>Uploaded Image</h2>
+        <img id="uploadedImage" src="" alt="Uploaded Image" width="800" style="display: block; margin: 0 auto;">
+        <p id="coordinates"></p>
+        <div id="coordInputContainer">
+            <input type="text" id="lat" placeholder="Latitude" />
+            <input type="text" id="lon" placeholder="Longitude" />
+        </div>
+        <button id="showMapBtn" onclick="showMap()">Show Map</button>
+    </div>
+
+    <div id="overlayBackground" onclick="closeMap()"></div>
+    <div id="mapOverlay">
+        <button id="closeMapBtn" onclick="closeMap()">Close</button>
+        <div id="mapContent"></div>
+    </div>
+
+    <button id="loadNewImageBtn" onclick="loadNewImage()">Load New Image</button>
+</body>
+</html>

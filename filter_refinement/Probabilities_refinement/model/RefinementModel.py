@@ -7,7 +7,7 @@ import torch.nn as nn
 from torch.optim.lr_scheduler import StepLR
 import copy
 from tqdm import tqdm
-import utils
+from moco import utils
 
 
 class RefinementModel(nn.Module):

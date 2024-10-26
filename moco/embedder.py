@@ -16,7 +16,7 @@ from torch.utils.data import random_split, DataLoader
 from torchvision import transforms
 
 from sklearn.metrics.pairwise import haversine_distances
-from test_custom_dataset import CustomImageDataset
+from moco.test_custom_dataset import CustomImageDataset
 
 
 # Inspired by https://docs.lightly.ai/self-supervised-learning/tutorials/package/tutorial_moco_memory_bank.html
@@ -79,7 +79,10 @@ class Embedder(nn.Module):
         Load weights from pre-existing file
         :param filename: The filename of the weights
         """
-        state_dict = torch.load(filename)
+
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        state_dict = torch.load(filename, map_location=device)
 
         new_state_dict = {}
         for key in state_dict:

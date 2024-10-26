@@ -5,3 +5,6 @@ pandas
 torch
 easyocr
 swifter
+matplotlib
+scikit-learn
+flask

@@ -20,7 +20,8 @@ class Atlas:
         self.embedder = Embedder(net)
         self.embedder.load_csv(moco_model_weights)
         self.refiner = RefinementModel()
-        self.refiner.load_state_dict(torch.load(refinements_model_weights))
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.refiner.load_state_dict(torch.load(refinements_model_weights, map_location = device))
         self.moco_transform = torchvision.transforms.Compose([transforms.Resize((224, 224)),
                                                               MoCoV2Transform(input_size=224, cj_prob=0.2,
                                                                               cj_bright=0.1, cj_contrast=0.1,
