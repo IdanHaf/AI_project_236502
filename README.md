@@ -29,8 +29,8 @@ It requires the images.csv of the photospheres dataset<br />
 
 ### `./feature_extraction`
 This folder contains the code for the first stage of our pipeline.
-* #### `./feature_extraction/Local code`
-
+* #### `./feature_extraction/region_model_tuning`
+    * Contains the tuning files of the region_model.
 * #### `./feature_extraction/data augmentation`
     * This is the code we used to convert the panoramic images to planar images. It requires the images.csv of the photospheres dataset
     * `convert_panorama.py` - This file has the function `panorama_to_plane`, which receives a path to a panoramic image, the FOV of the image, the output size of the image, the yaw and pitch angles of the planar image. This file was taken from https://blogs.codingballad.com/unwrapping-the-view-transforming-360-panoramas-into-intuitive-videos-with-python-6009bd5bca94
