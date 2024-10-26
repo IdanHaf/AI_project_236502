@@ -22,11 +22,12 @@ class LanguageModel:
         model = nn.DataParallel(model)
 
         # Loading the model weights.
-        model.load_state_dict(torch.load(model_dict_path))
-
-        self.model = model
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print("Gpu is available: " + str(torch.cuda.is_available()))
+        model.load_state_dict(torch.load(model_dict_path, map_location = self.device))
+
+        self.model = model
+        
 
         self.model.to(self.device)
         self.model.eval()
