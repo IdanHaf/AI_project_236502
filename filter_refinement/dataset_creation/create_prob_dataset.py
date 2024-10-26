@@ -8,6 +8,7 @@ import os
 # Then 'register application', register a new application (read access atleast),
 # then copy & paste the 'Client Token' here
 
+# TODO:: insert token.
 MLY_ACCESS_TOKEN = ''
 print(mly.set_access_token(MLY_ACCESS_TOKEN))
 
