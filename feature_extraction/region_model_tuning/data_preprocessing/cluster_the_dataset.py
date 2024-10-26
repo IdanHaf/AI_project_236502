@@ -16,6 +16,10 @@ def plot_cluster_dataset(num_clusters, df_coords):
     cluster_labels = kmeans.labels_
     cluster_centers = kmeans.cluster_centers_
 
+    # Save the clusters.
+    df_labels = pd.DataFrame(cluster_labels)
+    df_labels.to_csv('coords_labels.csv', header=False, index=False)
+
     # Count number of samples in each cluster
     cls_hist = np.bincount(cluster_labels, minlength=num_clusters)
     filtered_cluster_indices = np.where(cls_hist < 1000)[0]
@@ -70,11 +74,6 @@ if __name__ == "__main__":
     for c in clusters_num:
         plot_cluster_dataset(c, df_coords)
 
-# df_labels = pd.DataFrame(cluster_labels)
-# print(df_labels)
-# df_labels.to_csv('coords_labels.csv', header=False, index=False)
-# class_counts = df['class'].value_counts()
-# print(class_counts)
 
 
 

@@ -18,10 +18,16 @@ clusters_df['cluster_center'] = clusters_df['cluster_center'].apply(
 
 cluster_centers = np.radians(clusters_df['cluster_center'].to_list())
 distances_matrix = haversine_distances(cluster_centers) * 6371
-MAX_COMP_DISTANCE = 500
+MAX_COMP_DISTANCE = 250
 
 
 def expected_val(prob_vector, lat):
+    """
+    Predict coordinates according to expected value of the vector
+    :param prob_vector: The cluster probability vector
+    :param lat: whether we do it to the latitude
+    :return: The predicted coordinates
+    """
     res = 0
     vector = prob_vector
     for i in range(len(vector)):
@@ -33,6 +39,15 @@ def expected_val(prob_vector, lat):
 
 
 def Q_graph(arr, x_title, y_title, title, label, max_perc=100):
+    """
+    This creates a quantile graph of the result
+    :param arr: The array to be plotted
+    :param x_title: the title of the x-axis
+    :param y_title: the title of the y-axis
+    :param title: the title of the graph
+    :param label: the label of the plot
+    :param max_perc: The percentage to up we plot.
+    """
     sorted_arr = np.sort(arr)
     percentiles = np.arange(1, len(arr) + 1) / len(arr) * 100
     if max_perc != 100:

@@ -37,7 +37,7 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_dataset, batch_size=32,
                               shuffle=True, num_workers=2, pin_memory=True)
 
-    model_dict_path = './32_0.0001_refinement.pth'
+    model_dict_path = './refine.pth'
 
     model = RefinementModel()
     model.load_state_dict(torch.load(model_dict_path))

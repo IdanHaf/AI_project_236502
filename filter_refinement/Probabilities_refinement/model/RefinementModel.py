@@ -7,6 +7,7 @@ import torch.nn as nn
 from torch.optim.lr_scheduler import StepLR
 import copy
 from tqdm import tqdm
+import utils
 
 
 class RefinementModel(nn.Module):
@@ -175,6 +176,22 @@ def expected_val(df_clusters, prob_vector, lat):
     return res
 
 
+def get_coords(df_clusters, label, lat):
+    """
+    Calculate the expected value of giving prob vector on clusters values.
+    :param df_clusters: The df clusters contain the clusters coordinates.
+    :param prob_vector: The probability vector.
+    :param lat: True if calc lat, False for lng.
+    :return: expected value of giving prob vector on clusters values.
+    """
+    idx = 0 if lat else 1
+
+    condition = df_clusters['cluster_label'] == label
+    c = df_clusters[condition].cluster_center.to_numpy()[0]
+
+    return c[idx]
+
+
 def haversine(lat1, lon1, lat2, lon2):
     """
     Calculate the great circle distance between two points
@@ -235,6 +252,8 @@ def plot_test_results(data_loader, model, device, df_clusters_center):
     model.eval()
     before_dist = np.array([])
     dist = np.array([])
+    dist2 = np.array([])
+    dist3 = np.array([])
 
     with torch.no_grad():
         for inputs, labels, coords in tqdm(data_loader, desc="Batch"):
@@ -243,7 +262,7 @@ def plot_test_results(data_loader, model, device, df_clusters_center):
             before_lng_values = np.array([expected_val(df_clusters_center, prediction[:120], False)
                                           for prediction in inputs])
 
-            before_batch_dist = np.array([haversine(e_lat, before_lng_values[idx], coords[idx][0], coords[idx][1])
+            before_batch_dist = np.array([haversine(e_lat, before_lng_values[idx], coords[idx][1], coords[idx][0])
                                           for idx, e_lat in enumerate(before_lat_values)])
 
             before_dist = np.concatenate((before_dist, before_batch_dist))
@@ -251,18 +270,40 @@ def plot_test_results(data_loader, model, device, df_clusters_center):
             inputs = inputs.to(device)
             val_outputs = model(inputs)
             probabilities = nn.functional.softmax(val_outputs, dim=1)
+            _, predicted_labels = torch.max(probabilities, 1)
+            predicted_labels_np = predicted_labels.cpu().numpy()
             probabilities_np = probabilities.cpu().numpy()
 
             batch_lat_values = np.array([expected_val(df_clusters_center, prediction, True)
-                                         for prediction in probabilities_np])
+                                          for prediction in probabilities_np])
             batch_lng_values = np.array([expected_val(df_clusters_center, prediction, False)
-                                         for prediction in probabilities_np])
+                                          for prediction in probabilities_np])
 
-            batch_dist = np.array([haversine(e_lat, batch_lng_values[idx], coords[idx][0], coords[idx][1])
+            batch_dist = np.array([haversine(e_lat, batch_lng_values[idx], coords[idx][1], coords[idx][0])
                                    for idx, e_lat in enumerate(batch_lat_values)])
 
             dist = np.concatenate((dist, batch_dist))
 
-    Q_graph([before_dist, dist], 'percentage of the dataset', 'distance in KM',
+            batch_lat_values2 = np.array([get_coords(df_clusters_center, prediction, True)
+                                          for prediction in predicted_labels_np])
+            batch_lng_values2 = np.array([get_coords(df_clusters_center, prediction, False)
+                                          for prediction in predicted_labels_np])
+
+            batch_dist2 = np.array([haversine(e_lat, batch_lng_values2[idx], coords[idx][1], coords[idx][0])
+                                    for idx, e_lat in enumerate(batch_lat_values2)])
+
+            dist2 = np.concatenate((dist2, batch_dist2))
+
+            filtered_vectors = [utils.cluster_filter(utils.distances_matrix, vec) for vec in probabilities_np]
+            batch_lat_values3 = np.array([expected_val(df_clusters_center, prediction, True)
+                                          for prediction in filtered_vectors])
+            batch_lng_values3 = np.array([expected_val(df_clusters_center, prediction, False)
+                                          for prediction in filtered_vectors])
+            batch_dist3 = np.array([haversine(e_lat, batch_lng_values3[idx], coords[idx][1], coords[idx][0])
+                                    for idx, e_lat in enumerate(batch_lat_values3)])
+            dist3 = np.concatenate((dist3, batch_dist3))
+
+    Q_graph([before_dist, dist, dist2, dist3], 'percentage of the dataset', 'distance in KM',
             'Quantile_graph_of_predicted_error_after_expected_value',
-            labels=["Cnn model", "After refinement model"])
+            labels=["Cnn model", "Expected refinement model", "Max refinement model", "Filter & Refinement model"],
+            max_perc=60)

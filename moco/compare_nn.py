@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import torch
 import torchvision
 from lightly.transforms import MoCoV2Transform
@@ -19,7 +20,7 @@ test_mode = True
 validation_df = utils.read_vector_csv(validation, 'prob_vector')
 validation_df = validation_df.sample(frac=0.1, replace=False, random_state=42)
 test_df = utils.read_vector_csv(test, 'prob_vector')
-test_df = test_df.sample(frac=0.05, replace=False, random_state=42) # TODO: raise to 0.5
+test_df = test_df.sample(frac=0.5, replace=False, random_state=42)
 city_dataset_path = './Images'
 city_csv_file_path = './city_images_dataset.csv'
 big_dataset_path = './big_dataset'
@@ -36,6 +37,16 @@ dataset = CustomImageDataset(city_csv_file_path, city_dataset_path, big_csv_file
 
 
 def apply_row(n_errors, filtered_errors, original_errors, baseset, embedder, row, mode=False):
+    """
+    The function that applies the algorithm to each row.
+    :param n_errors: The list of moco errors
+    :param filtered_errors: The list of filtered errors
+    :param original_errors: The list of errors on the original classifier
+    :param baseset: The baseset df
+    :param embedder: The model
+    :param row: The row data
+    :param mode: Whether we tune parameters or test
+    """
     o_lat, o_lng = utils.get_cluster_center(np.argmax(row['prob_vector']))
     lat, lng = row['lat'], row['lng']
     o_err = utils.haversine(o_lat, o_lng, lat, lng)
@@ -125,6 +136,7 @@ if __name__ == '__main__':
                       'Filter', max_perc=70)
         utils.Q_graph(n_errors[15], 'percentage of the dataset', 'Distance in KM', 'Quantile graph of the error on the sample of the test set to 70%',
                       f'{15} neighbors comparison', max_perc=70)
-        test_df['error'] = n_errors[15]
-        test_df['cluster error'] = filtered_errors
-        test_df.to_csv("test_output.csv", index=False)
+        df_errors = pd.DataFrame(n_errors[15])
+        df_errors.to_csv('n_errors.csv', index=False)
+        f_errors = pd.DataFrame(filtered_errors)
+        f_errors.to_csv('cluster.csv', index=False)
