@@ -2,7 +2,18 @@
 In this project, we are trying to predict the geographical location of a given image.
 ## Our model pipeline
 ![Image of our model pipeline](/images/pipeline.png)
-
+## Install
+> [!TIP]
+> Recommended to create a conda environment.
+```bash
+git clone https://github.com/IdanHaf/AI_project_236502.git
+pip install -r libs.txt
+```
+Place model weghits at the AI_project_236502 folder.
+## Usage
+```bash
+python demo.py
+```
 ## Code structure
 #### `Pipeline.py`
    * contain the Atlas class which is our entire pipeline.
