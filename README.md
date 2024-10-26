@@ -12,9 +12,9 @@ It requires the images.csv of the photospheres dataset<br />
 This folder contain the code for the first stage of our pipeline.
 * #### `./feature_extraction/Local code`
 * #### `./feature_extraction/data augmentation`
-This is the code we used to convert the panoramic images to planar images.
-It requires the images.csv of the photospheres dataset
-    convert_panorama.py - This file has the function `panorama_to_plane`, which receive a path to a panoramic image, the FOV of the image, the output size of the image, the yaw and pitch angles of the planar image
+    * This is the code we used to convert the panoramic images to planar images.
+    * It requires the images.csv of the photospheres dataset
+convert_panorama.py - This file has the function `panorama_to_plane`, which receive a path to a panoramic image, the FOV of the image, the output size of the image, the yaw and pitch angles of the planar image
 This file was taken from https://blogs.codingballad.com/unwrapping-the-view-transforming-360-panoramas-into-intuitive-videos-with-python-6009bd5bca94
 augment.py - This file convert the photosphere dataset to planar images. It requires the original dataset to be in a directory called images and saves the output to directory called big_dataset
 It also creates a csv augmented_data.csv to find the data on each image.
