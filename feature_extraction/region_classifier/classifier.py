@@ -20,12 +20,13 @@ class Classifier:
         model = nn.DataParallel(model)
 
         # Loading the model.
-        model_dict_path = model_weights_path
-        model.load_state_dict(torch.load(model_dict_path))
-        model.eval()
-        self.model = model
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print("Gpu is available: " + str(torch.cuda.is_available()))
+        model_dict_path = model_weights_path
+        model.load_state_dict(torch.load(model_dict_path, map_location = self.device))
+        model.eval()
+        self.model = model
+        
 
     def predict_list_images(self, images):
         """
