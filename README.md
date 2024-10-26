@@ -1,6 +1,6 @@
 # ATLAS - Geolocation project
 In this project we are trying to predict the geographical location of a given image.
-### Our model pipeline
+## Our model pipeline
 ![Image of our model pipeline](/images/pipeline.png)
 
 ## Code structure
