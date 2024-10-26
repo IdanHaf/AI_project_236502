@@ -1,5 +1,6 @@
 # ATLAS - Geolocation project
 In this file we would explain our code briefly
+## Code structure ___
 Pipeline.py- contain the Atlas class which is our entire pipeline.
 run_testset.py - The script that extract the results of our pipeline on the testset, require paths to the dataset folders and model weights.
 parse_results.ipynb- Parse the experiments results both from run_testset and from compare_nn.py, requires their outputs csvs to be in the same folder.
