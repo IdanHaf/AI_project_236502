@@ -1,0 +1,7 @@
+lightly
+folium
+numpy
+pandas
+torch
+easyocr
+swifter
