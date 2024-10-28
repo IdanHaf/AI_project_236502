@@ -14,7 +14,7 @@ from test_custom_dataset import CustomImageDataset
 
 validation = 'val.csv'
 test = 'test.csv'
-model_weights = 'model.pth'
+model_weights = 'moco.pth'
 test_mode = True
 
 validation_df = utils.read_vector_csv(validation, 'prob_vector')

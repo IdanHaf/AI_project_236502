@@ -8,7 +8,7 @@ from embedder import Embedder
 from test_custom_dataset import CustomImageDataset
 
 filename = 'sample_df.csv'
-model_filename = 'model.pth'
+model_filename = 'moco.pth'
 
 city_dataset_path = './Images'
 city_csv_file_path = './city_images_dataset.csv'
