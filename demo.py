@@ -1,11 +1,18 @@
-import os 
+import os
 import random
 from flask import Flask, jsonify, render_template
 import folium
 from Pipeline import Atlas
 from PIL import Image
 
-pipeline = Atlas("reg.pth", 'lang.pth', 'moco.pth', 'refine.pth', 15, 'baseset.csv')
+weight_folder = os.path.join('model_resources', 'weights')
+region_model = os.path.join(weight_folder, 'reg.pth')
+lang_model = os.path.join(weight_folder, 'lang.pth')
+moco_model = os.path.join(weight_folder, 'moco.pth')
+refine_model = os.path.join(weight_folder, 'refine.pth')
+baseset_file = os.path.join('model_resources', 'baseset.csv')
+
+pipeline = Atlas(region_model, lang_model, moco_model, refine_model, 15, baseset_file)
 
 app = Flask(__name__)
 

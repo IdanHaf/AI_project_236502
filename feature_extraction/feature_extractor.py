@@ -31,6 +31,7 @@ class FeatureExtractor:
         # Get probabilities vectors for images from region classifier and language.
         regions_probabilities = self.region_classifier.predict_list_images(images_to_predict)
         lang_probabilities = self.lang_model.list_detect_language(images_to_predict)
+        print(f"lang_probabilities: {lang_probabilities}")
 
         combine_probs = [(reg_prob + lang_prob) if not np.all(lang_prob == np.zeros(9)) else reg_prob for reg_prob, lang_prob in
                          zip(regions_probabilities, lang_probabilities)]

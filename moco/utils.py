@@ -1,3 +1,4 @@
+import os
 import csv
 import math
 import ast
@@ -12,7 +13,8 @@ from sklearn.metrics.pairwise import haversine_distances
 import swifter
 
 MAX_CLUSTER_DISTANCE = 5000
-clusters_df = pd.read_csv('clusters.csv')
+clusters_file_path = os.path.join('model_resources', 'clusters.csv')
+clusters_df = pd.read_csv(clusters_file_path)
 clusters_df['cluster_center'] = clusters_df['cluster_center'].apply(
     lambda x: np.fromstring(x.strip('[]'), sep=' '))
 

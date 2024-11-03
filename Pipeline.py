@@ -48,6 +48,10 @@ class Atlas:
         return final_predictions
 
     def predict(self, images_path):
+        """
+        :param images_path: list of images paths.
+        :return: list of predicted coordinates.
+        """
         vectors = self.extractor.extract_features(images_path)
         images = [Image.open(image_path) for image_path in images_path]
 
