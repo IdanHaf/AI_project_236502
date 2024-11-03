@@ -9,7 +9,7 @@ In this project, we are trying to predict the geographical location of a given i
 git clone https://github.com/IdanHaf/AI_project_236502.git
 pip install -r libs.txt
 ```
-Place model weghits at the AI_project_236502 folder.
+Place model_resources folder from the one drive at the AI_project_236502 folder.
 ## Usage
 ```bash
 python demo.py
