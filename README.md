@@ -11,8 +11,8 @@ pip install -r libs.txt
 ```
 Place model_resources folder from the one drive at the AI_project_236502 folder.
 ## Usage
+At root folder: AI_project_236502
 ```bash
-cd AI_project_236502
 python demo.py
 ```
 ## Code structure
